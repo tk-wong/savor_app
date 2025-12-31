@@ -20,8 +20,8 @@ def process_image(input_path, output_path):
             # Process the image here
             file_processed += 1
         
-    print("Processing complete.")
+    print("\033[AProcessing complete.")
 
 
 if __name__ == "__main__":
-    process_image('../dataset/archive/food-101/food-101/images', '../dataset/archive/food-101/food-101/images_processed')
+    process_image('../dataset/testing/APPLE PIE LORA/image/150_apple pie', '../dataset/testing/APPLE PIE LORA/image/150_apple pie')

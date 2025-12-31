@@ -5,8 +5,25 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "accelerate>=1.12.0",
-    "datasets>=4.4.2",
-    "diffusers>=0.36.0",
+    "ftfy>=6.3.1",
+    "opencv-python>=4.12.0.88",
+    "pip>=25.3",
+    "regex>=2025.11.3",
+    "torch>=2.9.1",
+    "torchvision>=0.24.1",
+    "tqdm>=4.66.5",
     "transformers>=4.57.3",
+]
+
+[[tool.uv.index]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu130"
+
+[[tool.uv.index]]
+name = "torchvision"
+url = "https://download.pytorch.org/whl/cu130"
+
+[tool.uv.workspace]
+members = [
+    "image caption",
 ]

@@ -1,1 +1,8 @@
 __pycache__
+
+# image files for testing
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.txt
