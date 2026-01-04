@@ -10,6 +10,7 @@ import tqdm
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
 model.to(device)
 
 
@@ -119,15 +120,15 @@ def copy_top_images(top_images, dest_dir="./top_food_photos/", keep_dir_file=Fal
 
 
 if __name__ == "__main__":
-    input_base_dir = "../dataset/archive/food-101/food-101/images_processed"
-    output_base_dir = "../dataset/testing/APPLE PIE LORA/image"
+    input_base_dir = os.path.normpath("../dataset/archive/food-101/food-101/images_processed")
+    output_base_dir = os.path.normpath("../dataset/testing/APPLE PIE LORA/image")
     pbar = tqdm.tqdm(os.listdir(input_base_dir))
     for food_folder in pbar:
         food_image_dir = os.path.join(input_base_dir, food_folder)
         if os.path.isdir(food_image_dir):
             food_name = food_folder.replace("_", " ")
             pbar.set_description(f"Processing {food_name}")
-            top_images = process_images(food_name, food_image_dir,batch_size=32,top_k=10)
+            top_images = process_images(food_name, food_image_dir,batch_size=32,top_k=20)
             food_output_dir = os.path.join(output_base_dir, f"100_{food_name}")
             copy_top_images(top_images, dest_dir=food_output_dir)
     # image_dir = "./pizza/"
