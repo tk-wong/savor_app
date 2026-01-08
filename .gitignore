@@ -1,0 +1,4 @@
+*.pdf
+
+# ignore dataset in git to save space
+/**/dataset/*
