@@ -1,4 +1,4 @@
-import {Text, TextInput, View, TouchableOpacity, StyleSheet} from "react-native";
+import {Text, TextInput, View, TouchableOpacity, StyleSheet, Alert} from "react-native";
 import {useState} from "react";
 
 export default function Index() {
@@ -15,17 +15,18 @@ export default function Index() {
 
             <Text>Welcome</Text>
             <Text>User Name:</Text>
-            <TextInput style={{borderWidth: 1}} placeholder={"User name"} onChangeText={setUsername}/>
+            <TextInput style={{borderWidth: 1}} placeholder={"User name"} onChangeText={setUsername} id={"username_input"}/>
             <Text>Password</Text>
             <TextInput style={{borderWidth: 1}} secureTextEntry={true} placeholder={"Password"}
-                       onChangeText={setPassword}/>
+                       onChangeText={setPassword} id={"password_input"}/>
             <TouchableOpacity onPress={() => {
-                alert(`name: ${username}, password: ${password}`);
+                Alert.alert("User information",`name: ${username}, password: ${password}`);
             }} style={style.button}>
                 <Text>Submit</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
-                alert("Create account")
+                const message = "Create account"
+                Alert.alert("Create account", message);
             }} style={style.button}>
                 <Text>Create account</Text>
             </TouchableOpacity>
