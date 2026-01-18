@@ -6,7 +6,7 @@ def main():
     dataset_path = "../dataset/RecipeNLG/dataset/full_dataset.csv"
     df = pl.read_csv(dataset_path)
     seed  = 42
-    chosen_data = df['title', 'ingredients', 'directions'].sample(5000,seed=seed).lazy()
+    chosen_data = df['title', 'ingredients', 'directions'].sample(3000,seed=seed).lazy()
     all_results = []
     for title, ingredients, directions in chosen_data.collect().iter_rows():
 
@@ -17,16 +17,16 @@ def main():
         for idx, step in enumerate(processed_directions):
             final_directions += f"Step {idx + 1}: {step}\n"
         model_response = \
-            (f"Recipe title: {title}\nIngredients: {processed_ingredients.replace(", ", '\n')}\n"
-             f"Directions: {final_directions}")
+            (f"Recipe title: {title}\nIngredients:\n{processed_ingredients.replace(", ", '\n')}\n"
+             f"Directions:\n{final_directions}")
         all_results.append([
             {"role": "user", "content": user_prompt},
             {"role": "assistant", "content": model_response}
         ])
     result_json = {
-        "conversations": all_results
+        "messages": all_results
     }
-    with open("sample_recipes.json", "w") as f:
+    with open("sample_recipes.jsonl", "w") as f:
         json.dump(result_json, f, indent=2)
 
 
