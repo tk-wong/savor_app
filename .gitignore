@@ -2,3 +2,7 @@
 
 # ignore dataset in git to save space
 /**/dataset/*
+*env
+
+db_data
+pgadmin_data

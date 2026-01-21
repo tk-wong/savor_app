@@ -1,0 +1,25 @@
+# Use postgres/example user/password credentials
+
+services:
+  db:
+    image: postgres
+    container_name: postgres-db
+    restart: always
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+    env_file:
+      - .db-env
+    ports:
+      - 5432:5432
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: pgadmin
+      restart: always
+      ports:
+        - 8888:80
+      env_file:
+        - .db-env
+      volumes:
+        - ./pgadmin_data:/var/lib/pgadmin
+ 
+
