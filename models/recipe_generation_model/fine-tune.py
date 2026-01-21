@@ -6,7 +6,7 @@ from transformers import TextStreamer
 
 def fine_tune_model():
     model, tokenizer = FastModel.from_pretrained(
-        model_name="unsloth/Qwen3-1.7B-unsloth-bnb-4bit",
+        model_name="unsloth/Qwen3-4B-unsloth-bnb-4bit",
         max_seq_length=2048,  # Choose any for long context!
         load_in_4bit=True,  # 4 bit quantization to reduce memory
         load_in_8bit=False,  # [NEW!] A bit more accurate, uses 2x memory
@@ -53,8 +53,12 @@ def fine_tune_model():
     )
     trainer_stat = trainer.train()
     print("Training completed:", trainer_stat)
+    with open("trainer_stat.txt", "w") as f:
+        f.write(str(trainer_stat))
     messages = [
-        {"role": "user", "content": "create a recipe using eggs, milk, and flour"},
+        {"role": "user",
+         "content": "You are a professional chef and trying to teach a beginner to cook. "
+                    "Please create a recipe using eggs, milk, and flour"},
     ]
     text = tokenizer.apply_chat_template(
         messages,
@@ -70,8 +74,8 @@ def fine_tune_model():
         top_k=40,
         streamer=TextStreamer(tokenizer, skip_prompt=True),
     )
-    model.save_pretrained("qwen3-1.7b-finetuned-recipes")
-    tokenizer.save_pretrained("qwen3-1.7b-finetuned-recipes")
+    model.save_pretrained("qwen3-4b-finetuned-recipes")
+    tokenizer.save_pretrained("qwen3-4b-finetuned-recipes")
 
 
 if __name__ == '__main__':

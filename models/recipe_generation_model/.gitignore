@@ -1,3 +1,6 @@
 *.zip
 *.json
 *cache
+*jsonl
+*.txt
+*finetuned*
