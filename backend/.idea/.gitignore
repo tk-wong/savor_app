@@ -10,3 +10,6 @@
 /dataSources.local.xml
 
 ./copilot*.xml
+/copilot.data.migration.edit.xml
+/copilot.data.migration.ask.xml
+/copilot.data.migration.agent.xml
