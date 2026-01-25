@@ -17,8 +17,8 @@ df = df.with_columns(
 )
 embeddings = OllamaEmbeddings(model="qwen3-embedding:0.6b")
 db_location = "./chroma_langchain_db"
-db_exist = False
-# db_exist = os.path.exists(db_location)
+# db_exist = False
+db_exist = os.path.exists(db_location)
 vector_db = Chroma(
     collection_name="recipes",
     embedding_function=embeddings,
@@ -36,7 +36,7 @@ if not db_exist:
             page_content=page_content,
             metadata={
                 'recipe_title': row['title'],
-                'recipe_id': str(row["index"])
+                # 'recipe_id': str(row["index"])
             },
             id=str(row["index"]),
         )
@@ -46,12 +46,12 @@ if not db_exist:
 
 retriever = vector_db.as_retriever(search_type="similarity", search_kwargs={"k": 5})
 
-result = vector_db.similarity_search(
-    query="eggs, milk, flour",
-    k=5,
-)
-for doc in result:
-    print(f"Content: {doc.page_content}\n")
+# result = vector_db.similarity_search(
+#     query="eggs, milk, flour",
+#     k=5,
+# )
+# for doc in result:
+#     print(f"Content: {doc.page_content}\n")
 
 
 
