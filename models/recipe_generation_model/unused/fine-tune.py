@@ -53,7 +53,7 @@ def fine_tune_model():
     )
     trainer_stat = trainer.train()
     print("Training completed:", trainer_stat)
-    with open("trainer_stat.txt", "w") as f:
+    with open("../trainer_stat.txt", "w") as f:
         f.write(str(trainer_stat))
     messages = [
         {"role": "user",

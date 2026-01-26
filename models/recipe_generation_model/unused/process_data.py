@@ -7,7 +7,7 @@ import tqdm
 
 
 def main():
-    dataset_path = "../dataset/RecipeNLG/dataset/full_dataset.csv"
+    dataset_path = "../../dataset/RecipeNLG/dataset/full_dataset.csv"
     df = pl.read_csv(dataset_path)
     df = df.with_columns(
         pl.col("ingredients").str.json_decode(pl.List(pl.String)).alias("ingredients"),
@@ -35,7 +35,7 @@ def main():
     result_json = {
         "messages": all_results
     }
-    with open("sample_recipes.jsonl", "w") as f:
+    with open("../sample_recipes.jsonl", "w") as f:
         json.dump(result_json, f, indent=2)
     print("Done.")
 
