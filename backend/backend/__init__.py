@@ -5,4 +5,7 @@ def create_app(config="config.py"):
     app.config.from_pyfile(config)
     from .database import db
     # db.init_app(app)
+
+    from .user import user_blueprint
+    app.register_blueprint(user_blueprint)
     return app
