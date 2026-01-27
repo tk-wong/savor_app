@@ -4,3 +4,5 @@
 *jsonl
 *.txt
 *finetuned*
+chroma_langchain_db/*
+/**/copilot*
