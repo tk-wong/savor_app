@@ -1,21 +1,20 @@
-import {ScrollView, View, Text, TextInput, TouchableOpacity, Alert, StyleSheet} from "react-native";
+import {ScrollView, Text, TextInput, TouchableOpacity, Alert, StyleSheet} from "react-native";
 import {Stack} from "expo-router";
-import {useState} from "react";
-import {inspect} from "node:util";
+// import {useState} from "react";
 
-class User{
-    name: string;
-    email: string;
-    password: string
-    constructor(name: string, email: string, password: string) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-    }
-}
+// class User{
+//     name: string;
+//     email: string;
+//     password: string
+//     constructor(name: string, email: string, password: string) {
+//         this.name = name;
+//         this.email = email;
+//         this.password = password;
+//     }
+// }
 
 export default function CreateUserPage() {
-    const [user,setUser] = useState<User>();
+    // const [user,setUser] = useState<User>();
     return (
         <>
             <Stack.Screen

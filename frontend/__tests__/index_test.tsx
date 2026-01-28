@@ -2,7 +2,7 @@
 import React from 'react';
 import { render, fireEvent ,screen} from '@testing-library/react-native';
 import LoginPage from '../app/loginPage';
-import {Alert, Platform} from "react-native";
+import {Alert} from "react-native";
 import {renderRouter} from "expo-router/testing-library";
 
 import {router} from "expo-router";

@@ -1,5 +1,5 @@
 import LoginPage from "@/app/loginPage";
-import CreateUserPage from "./createUserPage";
+// import CreateUserPage from "./createUserPage";
 
 export default function Index(){
     return <LoginPage/>

@@ -1,4 +1,4 @@
-import {Text, TextInput, View, TouchableOpacity, StyleSheet, Alert, Platform} from "react-native";
+import {Text, TextInput, View, TouchableOpacity, StyleSheet, Alert} from "react-native";
 
 import {useState} from "react";
 import { useRouter } from 'expo-router';
@@ -27,7 +27,7 @@ export default function LoginPage() {
                 <Text>Submit</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
-                const message = "Create account"
+                // const message = "Create account"
                 router.navigate("/createUserPage")
             }} style={style.button}>
                 <Text>Create account</Text>
