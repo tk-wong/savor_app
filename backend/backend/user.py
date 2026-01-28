@@ -1,9 +1,9 @@
 import flask
 from flask import Blueprint, request
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import  check_password_hash
 from flask_login import login_user
 
-from backend.database import User
+from backend.user_model import User
 
 user_blueprint = Blueprint('user', __name__)
 
