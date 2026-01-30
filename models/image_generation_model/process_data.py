@@ -24,4 +24,4 @@ def process_image(input_path, output_path):
 
 
 if __name__ == "__main__":
-    process_image('../dataset/testing/APPLE PIE LORA/image/150_apple pie', '../dataset/testing/APPLE PIE LORA/image/150_apple pie')
+    process_image('/home/user/project/savor_app/models/dataset/archive/food-101/food-101/images', '../dataset/testing/processed_images')

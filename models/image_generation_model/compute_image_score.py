@@ -120,17 +120,17 @@ def copy_top_images(top_images, dest_dir="./top_food_photos/", keep_dir_file=Fal
 
 
 if __name__ == "__main__":
-    input_base_dir = os.path.normpath("../dataset/archive/food-101/food-101/images_processed")
-    output_base_dir = os.path.normpath("../dataset/testing/APPLE PIE LORA/image")
+    input_base_dir = os.path.normpath("../dataset/testing/processed_images")
+    output_base_dir = os.path.normpath("../dataset/testing/verified")
     pbar = tqdm.tqdm(os.listdir(input_base_dir))
     for food_folder in pbar:
         food_image_dir = os.path.join(input_base_dir, food_folder)
         if os.path.isdir(food_image_dir):
             food_name = food_folder.replace("_", " ")
             pbar.set_description(f"Processing {food_name}")
-            top_images = process_images(food_name, food_image_dir,batch_size=32,top_k=20)
+            top_images = process_images(food_name, food_image_dir,batch_size=32,top_k=22)
             food_output_dir = os.path.join(output_base_dir, f"100_{food_name}")
-            copy_top_images(top_images, dest_dir=food_output_dir)
+            copy_top_images(top_images[20:], dest_dir=output_base_dir, keep_dir_file=True)
     # image_dir = "./pizza/"
     # top_20 = process_images("pizza",image_dir)
     # copy_top_images(top_20)

@@ -29,7 +29,7 @@ def generate_image_caption(path,prefix=""):
             f.write(caption)
     return caption
 
-def generate_caption_from_directory(image_dir):
+def generate_caption_from_directory(image_dir, split_by_underscore=True):
     captions = {}
     image_path = glob.glob(os.path.join(image_dir, "**", "*.jpg"), recursive=True)
     # for filename in tqdm.tqdm(os.listdir(image_dir)):
@@ -39,7 +39,10 @@ def generate_caption_from_directory(image_dir):
     #         captions[filename] = caption
     for path in tqdm.tqdm(image_path):
         filename = os.path.basename(path)
-        food_name = os.path.basename(os.path.dirname(path)).split('_')[1]
+        if split_by_underscore:
+            food_name = os.path.basename(os.path.dirname(path)).split('_')[1]
+        else:
+            food_name = ""
         caption = generate_image_caption(path, prefix=food_name)
         captions[filename] = caption
     return captions
@@ -48,4 +51,4 @@ def generate_caption_from_directory(image_dir):
 # caption = generate_image_caption("pizza/2965.jpg")
 # print("Generated Caption:", caption)
 
-captions = generate_caption_from_directory("/home/user/project/savor_app/models/dataset/testing/APPLE PIE LORA/image")
+captions = generate_caption_from_directory("/home/user/project/savor_app/models/dataset/testing/verified",split_by_underscore=False)
