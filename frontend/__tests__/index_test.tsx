@@ -1,11 +1,16 @@
 // File: __tests__/index_test.tsx
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import Index from '../app/index';
+import { render, fireEvent ,screen} from '@testing-library/react-native';
+import LoginPage from '../app/loginPage';
 import {Alert} from "react-native";
+import {renderRouter} from "expo-router/testing-library";
+
+import {router} from "expo-router";
+
 
 describe('Index screen', () => {
     const alertMock = jest.spyOn(Alert, 'alert');
+    const navigateMock = jest.spyOn(router,'navigate')
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -16,15 +21,15 @@ describe('Index screen', () => {
     });
 
     it('renders username and password inputs and buttons', () => {
-        const { getByPlaceholderText, getByText } = render(<Index/>);
-        expect(getByPlaceholderText('User name')).toBeTruthy();
-        expect(getByPlaceholderText('Password')).toBeTruthy();
-        expect(getByText('Submit')).toBeTruthy();
-        expect(getByText('Create account')).toBeTruthy();
+        render(<LoginPage/>);
+        expect(screen.getByPlaceholderText('User name')).toBeTruthy();
+        expect(screen.getByPlaceholderText('Password')).toBeTruthy();
+        expect(screen.getByText('Submit')).toBeTruthy();
+        expect(screen.getByText('Create account')).toBeTruthy();
     });
 
     it('alerts with name and password when Submit is pressed', () => {
-        const { getByPlaceholderText, getByText } = render(<Index />);
+        const { getByPlaceholderText, getByText } = render(<LoginPage />);
         const usernameInput = getByPlaceholderText('User name');
         const passwordInput = getByPlaceholderText('Password');
         const submitBtn = getByText('Submit');
@@ -37,11 +42,14 @@ describe('Index screen', () => {
     });
 
     it('alerts "Create account" when Create account is pressed', () => {
-        const { getByText } = render(<Index />);
+        renderRouter(
+
+        )
+        const { getByText } = render(<LoginPage />);
         const createBtn = getByText('Create account');
 
         fireEvent.press(createBtn);
-        expect(alertMock).toHaveBeenCalledWith('Create account','Create account');
+        expect(navigateMock).toHaveBeenCalledWith('/createUserPage');
     });
 
 
