@@ -6,14 +6,15 @@ from sqlalchemy_utils import drop_database
 from backend.user_model import User
 from dotenv import load_dotenv
 from sqlalchemy.orm import close_all_sessions
+import os
 
 @pytest.fixture(scope='session', autouse=True)
 def load_env():
-    load_dotenv(".env_test")
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env_test"))
 
 @pytest.fixture()
 def app():
-    app = create_app(config="../test/test_config.py")
+    app = create_app(config=os.path.join(os.path.dirname(__file__), "test_config.py"))
     from backend.database import db
     # sample_user = User(email="sample@test.com", username="Sample User",password_hash=generate_password_hash("testing"))
     with app.app_context():

@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-env_load_status = load_dotenv("test/.env_test")
+env_load_status = load_dotenv(os.path.join(os.path.dirname(__file__), ".env_test"))
 if not env_load_status:
     raise FileNotFoundError("Could not load .env_test file")
 
