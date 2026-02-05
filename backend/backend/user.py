@@ -17,13 +17,26 @@ def user():
 def login():
     email = request.form.get('email')
     password = request.form.get('password')
-    user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password_hash, password):
-        if not user:
+    if not email or not password:
+        logging.log(logging.WARNING, "Login attempt with missing email or password")
+        return flask.jsonify({"message": "Email and password are required"}), 400
+    user_query = User.query.filter_by(email=email).first()
+    if not user_query or not check_password_hash(user_query.password_hash, password):
+        if not user_query:
             logging.log(logging.WARNING, f"Login attempt with non-existent email: {email}")
         else:
             logging.log(logging.WARNING, f"Invalid password attempt for email: {email}")
         return flask.jsonify({"message": "Invalid credentials"}), 401
-    login_user(user)
+    login_user(user_query)
     logging.log(logging.INFO, f"Login successful for email: {email}")
-    return flask.jsonify({"message": f"Welcome back, {user.username}!"})
+    return flask.jsonify({"message": f"Welcome back, {user_query.username}!"})
+
+@user_blueprint.route('/user/create',methods=['POST'])
+def create_user():
+    email = request.form.get('email')
+    username = request.form.get('username')
+    password = request.form.get('password')
+    if not email or not username or not password:
+        logging.log(logging.WARNING, "User creation attempt with missing fields")
+        return flask.jsonify({"message": "Email, username, and password are required"}), 400
+    return flask.jsonify({"message": "Create user endpoint"})
