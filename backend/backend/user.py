@@ -1,6 +1,6 @@
 import flask
 from flask import Blueprint, request
-from werkzeug.security import  check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import login_user
 
 import logging
@@ -39,4 +39,14 @@ def create_user():
     if not email or not username or not password:
         logging.log(logging.WARNING, "User creation attempt with missing fields")
         return flask.jsonify({"message": "Email, username, and password are required"}), 400
-    return flask.jsonify({"message": "Create user endpoint"})
+    user_query = User.query.filter_by(email=email).first()
+    if user_query:
+        logging.log(logging.WARNING, f"User creation attempt with existing email: {email}")
+        return flask.jsonify({"message": "User with this email already exists"}), 409
+    password_hash = generate_password_hash(password)
+    new_user = User(email=email, username=username, password_hash=password_hash)
+    from backend.database import db
+    db.session.add(new_user)
+    db.session.commit()
+    logging.log(logging.INFO, f"User created successfully with email: {email}")
+    return flask.jsonify({"message": f"User {username} created successfully!"}), 201

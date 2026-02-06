@@ -45,7 +45,9 @@ def runner(app):
 def sample_user(app):
     with app.app_context():
         from backend.database import db
-        user = User(email="example@abc.com", username="Example User", password_hash=generate_password_hash("testing"))
+        user = User(email="example@abc.com",
+                    username="Example User",
+                    password_hash=generate_password_hash("testing"))
         db.session.add(user)
         db.session.commit()
         return user
