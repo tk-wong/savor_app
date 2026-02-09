@@ -2,7 +2,7 @@
 
 services:
   db:
-    image: postgres
+    image: pgvector/pgvector:0.8.1-pg18-trixie
     container_name: postgres-db
     restart: always
     volumes:

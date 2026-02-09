@@ -2,10 +2,20 @@ import tqdm
 from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-
+from langchain_postgres import PGVector
+from dotenv import load_dotenv
 import polars as pl
 import os
 
+
+load_dotenv("./.env_dev")
+
+db_user  = os.getenv("DB_USER")
+db_password  = os.getenv("DB_PASSWORD")
+db_host  = os.getenv("DB_HOST")
+db_port  = os.getenv("DB_PORT")
+db_name  = os.getenv("DB_NAME")
+db_path = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:{db_port}"
 
 
 dataset_path = "../dataset/RecipeNLG/dataset/full_dataset.csv"
@@ -17,12 +27,13 @@ df = df.with_columns(
 )
 embeddings = OllamaEmbeddings(model="qwen3-embedding:0.6b")
 db_location = "./chroma_langchain_db"
-# db_exist = False
-db_exist = os.path.exists(db_location)
-vector_db = Chroma(
+db_exist = False
+# db_exist = os.path.exists(db_location)
+vector_db = PGVector(
     collection_name="recipes",
-    embedding_function=embeddings,
-    persist_directory=db_location,
+    embeddings=embeddings,
+    connection=db_path,
+    use_jsonb=True,
 )
 if not db_exist:
     documents = []
