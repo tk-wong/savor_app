@@ -1,24 +1,28 @@
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_ollama import OllamaLLM
 
 from classification_strategy import ClassificationStrategy
 from question_strategy import QuestionStrategy
 from recipe_generation_strategy import RecipeGenerationStrategy
+from recipe_retriever import RecipeRetriever
 
 
 class RecipeAssistant:
-    def __init__(self, generation_model, classification_model, retriever):
+    def __init__(self, generation_model: OllamaLLM, classification_model: OllamaLLM, recipe_retriever: RecipeRetriever):
         self.model_strategies = {
             "recipe": RecipeGenerationStrategy(),
             "question": QuestionStrategy(),
             "classification": ClassificationStrategy()
         }
-        self.generation_model = generation_model
-        self.classification_model = classification_model
-        self.retriever = retriever
-        self.request_runnable = RunnableParallel({"recipes": retriever, "request": RunnablePassthrough()})
+        self.generation_model: OllamaLLM = generation_model
+        self.classification_model: OllamaLLM = classification_model
+        self.recipe_retriever: RecipeRetriever = recipe_retriever
+        self.request_runnable = RunnableParallel(
+            {"recipes": self.recipe_retriever.get_retriever(), "request": RunnablePassthrough()})
 
-    def classify(self,request):
-        classifier_chain = self.model_strategies["classification"].build_chain(self.classification_model, self.retriever)
+    def classify(self, request):
+        classifier_chain = self.model_strategies["classification"].build_chain(self.classification_model,
+                                                                               self.request_runnable)
         recipe_create_words = [
             "create", "make", "generate", "write", "give me", "provide", "i want", "need", "suggest", "develop",
             "formulate", "cook", "recipe", "recipes", "prepare", "example"

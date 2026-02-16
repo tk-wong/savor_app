@@ -7,7 +7,7 @@ class QuestionStrategy(ChainStrategy):
     Here are some relevant recipes for your reference: {recipes} 
     You can combine the ideas from these recipes to answer the question. 
     Here is the question from the user: {request}
-    Response in JSON format with the following structure:
+    Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
     {{
         "request_type": "question",
         "answer": "the answer to the user's question, which should be detailed and informative, and refer to the relevant recipes when necessary.
