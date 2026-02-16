@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import polars as pl
 import os
 
+from sqlalchemy_utils import database_exists, create_database
 
 load_dotenv("./.env_dev")
 
@@ -15,7 +16,10 @@ db_password  = os.getenv("DB_PASSWORD")
 db_host  = os.getenv("DB_HOST")
 db_port  = os.getenv("DB_PORT")
 db_name  = os.getenv("DB_NAME")
-db_path = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:{db_port}"
+db_path = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+#
+# if not database_exists(db_path):
+#     create_database(db_path)
 
 
 dataset_path = "../dataset/RecipeNLG/dataset/full_dataset.csv"
@@ -27,7 +31,7 @@ df = df.with_columns(
 )
 embeddings = OllamaEmbeddings(model="qwen3-embedding:0.6b")
 db_location = "./chroma_langchain_db"
-db_exist = False
+db_exist = database_exists(db_path)
 # db_exist = os.path.exists(db_location)
 vector_db = PGVector(
     collection_name="recipes",
@@ -36,6 +40,7 @@ vector_db = PGVector(
     use_jsonb=True,
 )
 if not db_exist:
+    create_database(db_path)
     documents = []
     ids = []
     indexed_df = df.with_row_index(name="index")
