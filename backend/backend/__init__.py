@@ -12,6 +12,8 @@ def create_app(config="config.py"):
         create_database(app.config['SQLALCHEMY_DATABASE_URI'])
     from .user import user_blueprint
     app.register_blueprint(user_blueprint)
+    from .chat import chat_blueprint
+    app.register_blueprint(chat_blueprint)
     from .login_manager import login_manager
     login_manager.init_app(app)
     return app
