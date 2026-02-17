@@ -39,9 +39,9 @@ def main():
 
     @app.route('/recipe_generation', methods=['POST'])
     def recipe_generation():
-        request = flask.request.json.get('createRequest')
+        request = flask.request.json.get('prompt')
         if not request:
-            return {"error": "createRequest is required"}, 400
+            return {"error": "prompt is required"}, 400
         result = recipe_assistant.handle_request(request)
         return flask.Response(result, mimetype="application/json")
     app.run(port=5010, debug=True)
