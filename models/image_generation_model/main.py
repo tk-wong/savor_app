@@ -22,7 +22,7 @@ def main(img_gen_model: ImageGenerationModel):
         byte_io.seek(0)
         return flask.send_file(byte_io, mimetype="image/png")
 
-    app.run(host="127.0.0.1", port=5000)
+    app.run( port=5020)
 
 
 if __name__ == "__main__":
