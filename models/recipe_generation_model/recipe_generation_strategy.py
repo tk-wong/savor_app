@@ -12,7 +12,7 @@ class RecipeGenerationStrategy(ChainStrategy):
     Here is the request from the user: {request}
     Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
     {{
-        "request_type": "recipe",
+        "prompt_type": "recipe",
         "recipe": {{
         "title": "the title of the recipe you created",
         "ingredients": ["a list of ingredients needed for the recipe, which should be in a simple and concise format, and only include the ingredients that are necessary for the recipe"],

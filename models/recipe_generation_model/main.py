@@ -29,7 +29,9 @@ def main():
     })
     app = Flask(__name__)
     app.logger.info("Initializing models and retriever...")
-    model = OllamaLLM(model="qwen3:1.7b")
+    model = OllamaLLM(model="qwen3:1.7b",
+                      keep_alive="0",
+                      )
     classification_model = OllamaLLM(model="qwen3:0.6b")
     embedding_model = OllamaEmbeddings(model="qwen3-embedding:0.6b")
     recipe_retriever = RecipeRetriever(env_path="./.env_dev", dataset_name="paultimothymooney/recipenlg",

@@ -9,7 +9,7 @@ class QuestionStrategy(ChainStrategy):
     Here is the question from the user: {request}
     Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
     {{
-        "request_type": "question",
+        "prompt_type": "question",
         "answer": "the answer to the user's question, which should be detailed and informative, and refer to the relevant recipes when necessary.
         You should provide the recipe title, ingredients, and detailed directions in your answer if it is needed for explaining to the user.
         However, do not mention any ids of the recipes when answering the questions and providing the recipe example.
