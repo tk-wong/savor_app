@@ -7,3 +7,4 @@ __pycache__
 *.webp
 *.txt
 unused/*
+.idea
