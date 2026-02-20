@@ -31,7 +31,8 @@ class ImageGenerationModel:
         self.pipe.load_lora_weights(self.lora_name, use_auth_token=hf_token, seed=42)
         self.pipe.fuse_lora(lora_scale=self.lora_weight)
         # if not self.lazy_load:
-        self.pipe.to(self.device)
+        self.pipe.enable_model_cpu_offload()
+        # self.pipe.to(self.device)
 
     def generate_image(self, prompt: str, num_inference_steps: int = 30, guidance_scale: float = 7.5):
         # if self.lazy_load:
