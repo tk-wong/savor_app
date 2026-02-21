@@ -11,19 +11,14 @@ import polars as pl
 
 
 class RecipeRetriever:
-    def __init__(self, app,env_path, dataset_name, csv_name, embeddings_model, data_length=None):
-        load_dotenv(env_path)
+    def __init__(self, app, dataset_name, csv_name, embeddings_model, database_path ,data_length=None):
+
         self.app = app
         self.embedding_model = embeddings_model
         self.dataset_name = dataset_name
         self.csv_name = csv_name
         self.data_length = data_length
-        db_user = os.getenv("DB_USER")
-        db_password = os.getenv("DB_PASSWORD")
-        db_host = os.getenv("DB_HOST")
-        db_port = os.getenv("DB_PORT")
-        db_name = os.getenv("DB_NAME")
-        self.db_path = f"postgresql+psycopg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        self.db_path = database_path
         self.vector_db = PGVector(
             collection_name="recipes",
             embeddings=self.embedding_model,
@@ -37,11 +32,10 @@ class RecipeRetriever:
 
     def create_embeddings(self):
         self.app.logger.info("Loading dataset and creating embeddings...")
-        lazy_df = kagglehub.load_dataset(
+        lazy_df = kagglehub.dataset_load(
                 kagglehub.KaggleDatasetAdapter.POLARS,
                 self.dataset_name,
                 self.csv_name,
-
                 )
         # path = kagglehub.dataset_download(self.dataset_name, "RecipeNLG_dataset.csv")
         df = lazy_df.with_columns(

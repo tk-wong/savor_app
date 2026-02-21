@@ -1,7 +1,9 @@
 import logging
+import os
 import time
 
 import flask
+from dotenv import load_dotenv
 from flask import Flask
 from langchain_ollama import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
@@ -27,6 +29,14 @@ def main():
             'handlers': ['wsgi']
         }
     })
+    env_path="./.env_dev"
+    load_dotenv(env_path)
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_host = os.getenv("DB_HOST")
+    db_port = os.getenv("DB_PORT")
+    db_name = os.getenv("DB_NAME")
+    db_path = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     app = Flask(__name__)
     app.logger.info("Initializing models and retriever...")
     model = OllamaLLM(model="qwen3:1.7b",
@@ -34,10 +44,10 @@ def main():
                       )
     classification_model = OllamaLLM(model="qwen3:0.6b")
     embedding_model = OllamaEmbeddings(model="qwen3-embedding:0.6b")
-    recipe_retriever = RecipeRetriever(env_path="./.env_dev", dataset_name="paultimothymooney/recipenlg",
+    recipe_retriever = RecipeRetriever(database_path=db_path,dataset_name="paultimothymooney/recipenlg",
                                        embeddings_model=embedding_model, csv_name="RecipeNLG_dataset.csv", data_length=10000, app=app)
     recipe_assistant = RecipeAssistant(
-        model, classification_model, recipe_retriever)
+        generation_model=model, classification_model=classification_model, recipe_retriever=recipe_retriever, db_path=db_path, app=app)
 
     @app.route('/recipe_generation', methods=['POST'])
     def recipe_generation():

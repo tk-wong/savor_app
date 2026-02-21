@@ -6,6 +6,7 @@ class QuestionStrategy(ChainStrategy):
     to mention that you are a chef when answering the question)
     Here are some relevant recipes for your reference: {recipes} 
     You can combine the ideas from these recipes to answer the question. 
+    Here are the previous conversions with the user: {chat_history}
     Here is the question from the user: {request}
     Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
     {{

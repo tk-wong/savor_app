@@ -2,11 +2,12 @@ from chain_strategy import ChainStrategy
 
 
 class ClassificationStrategy(ChainStrategy):
-    classifier_template = '''Decide whether the following user request is asking for a recipe creation or a question about cooking. 
+    classifier_template = '''Decide whether the following user request is asking for a recipe creation or a question about cooking. Use the chat history to help you make the decision.
     If it is asking for recipe creation, respond with 'recipe'. 
     If it is asking a question regarding on cooking, respond with 'question'.
     Otherwise, respond with 'question'.
     User request: {request}
+    chat history: {chat_history}
     '''
 
     def build_chain(self, llm, runnable):

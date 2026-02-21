@@ -8,7 +8,9 @@ class RecipeGenerationStrategy(ChainStrategy):
 
     # Here are some relevant recipes for your reference: {recipes}
     You can combine the ideas from these recipes to create a new and unique recipe. 
-
+    
+    Here are the previous conversions with the user: {chat_history}
+    
     Here is the request from the user: {request}
     Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
     {{
