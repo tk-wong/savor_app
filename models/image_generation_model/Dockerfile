@@ -1,4 +1,4 @@
-FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:13.0.2-devel-ubuntu24.04 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -27,7 +27,7 @@ COPY main.py image_generation_model.py /app/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
-FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:13.0.2-runtime-ubuntu24.04
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/main.py /app/image_generation_model.py /app/
