@@ -113,11 +113,10 @@ export const RenderSend = React.memo((props: SendProps<IMessage>) => (
             justifyContent: 'center',
             marginHorizontal: 4,
         }}
-        onSend={() => (console.log('testing'))}
     >
         <Image
             style={{ width: 32, height: 32 }}
-            source={require('../assets/images/react-logo.png')}
+            source={require('../../assets/images/react-logo.png')}
         />
     </Send>
 ))
