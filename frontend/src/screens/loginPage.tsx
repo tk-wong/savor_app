@@ -59,6 +59,15 @@ export default function LoginPage() {
 
                 <Text>All recipes page</Text>
             </TouchableOpacity>
+                        <TouchableOpacity onPress={()=> {
+                // for debugging
+                router.navigate("/recipePage")
+            }
+
+            } style={style.button}>
+
+                <Text>Recipe page</Text>
+            </TouchableOpacity>
         </View>
     );
 }
