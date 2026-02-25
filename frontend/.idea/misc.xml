@@ -1,3 +1,0 @@
-<project version="4">
-  <component name="ReactNativePackager" nodePath="project" reactNativePackagePath="$PROJECT_DIR$/node_modules/react-native" workingDirectory="$PROJECT_DIR$" />
-</project>
