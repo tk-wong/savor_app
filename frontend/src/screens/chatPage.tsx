@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import {Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps} from 'react-native-gifted-chat'
+import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat'
 import { useHeaderHeight } from '@react-navigation/elements'
-import {View, Image, useColorScheme, Platform,} from "react-native";
-import {Feather} from "@expo/vector-icons";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { View, Image, useColorScheme, Platform, } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export default function Example() {
     const [messages, setMessages] = useState<IMessage[]>([])
-    const [listening,setlstening] = useState(false);
+    const [listening, setlstening] = useState(false);
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
     const keyboardVerticalOffset = Platform.select({
@@ -31,7 +31,7 @@ export default function Example() {
         ])
     }, [])
 
-    const onSend = useCallback((messages:IMessage[] = []) => {
+    const onSend = useCallback((messages: IMessage[] = []) => {
         setMessages(previousMessages =>
             GiftedChat.append(previousMessages, messages),
         )
@@ -74,28 +74,28 @@ export default function Example() {
     })
     return (
 
-        <View style={{flex: 1}}>
-        <GiftedChat
-            messages={messages}
-            onSend={messages => {
-                onSend(messages);
-            }}
-            user={{
-                _id: 1,
-            }}
-            keyboardAvoidingViewProps={{ keyboardVerticalOffset: keyboardVerticalOffset }}
-            renderSend={RenderSend}
-            // renderComposer={renderComposer}
-            renderActions={RenderActions}
+        <View style={{ flex: 1 }}>
+            <GiftedChat
+                messages={messages}
+                onSend={messages => {
+                    onSend(messages);
+                }}
+                user={{
+                    _id: 1,
+                }}
+                keyboardAvoidingViewProps={{ keyboardVerticalOffset: keyboardVerticalOffset }}
+                renderSend={RenderSend}
+                // renderComposer={renderComposer}
+                renderActions={RenderActions}
 
-            // minInputToolbarHeight={60}
-            messagesContainerStyle={{
-                paddingBottom: insets.bottom
-            }}
-        />
+                // minInputToolbarHeight={60}
+                messagesContainerStyle={{
+                    paddingBottom: insets.bottom
+                }}
+            />
             {Platform.OS === 'android' && <View style={{ height: insets.bottom }} />}
 
-</View>
+        </View>
     )
 }
 
@@ -117,3 +117,7 @@ export const RenderSend = React.memo((props: SendProps<IMessage>) => (
         />
     </Send>
 ))
+
+// TODO: implement voice interaction using react-native-voice or any other library, and connect it with the chat interface to allow users to send messages using their voice.
+// TODO: fetch chat history from backend and display it in the chat interface, and also send new messages to the backend to store them in the database.
+// TODO: send the user's message to the backend and get a response from the chatbot, and display the chatbot's response in the chat interface.

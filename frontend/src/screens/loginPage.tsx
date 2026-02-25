@@ -1,7 +1,7 @@
-import {Text, TextInput, View, TouchableOpacity, StyleSheet, Alert} from "react-native";
+import { Text, TextInput, View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import * as Speech from 'expo-speech';
-import {useState} from "react";
-import {useRouter} from 'expo-router';
+import { useState } from "react";
+import { useRouter } from 'expo-router';
 
 export default function LoginPage() {
     const [username, setUsername] = useState("")
@@ -9,8 +9,10 @@ export default function LoginPage() {
     const speak = () => {
         const thingToSay = 'testing 123';
         Speech.speak(thingToSay,
-            {language: "en-US",
-            rate: 0.8,});
+            {
+                language: "en-US",
+                rate: 0.8,
+            });
     };
 
     const router = useRouter();
@@ -24,12 +26,13 @@ export default function LoginPage() {
         >
             <Text>Welcome</Text>
             <Text>User Name:</Text>
-            <TextInput style={{borderWidth: 1}} placeholder={"User name"} onChangeText={setUsername}
-                       id={"username_input"}/>
+            <TextInput style={{ borderWidth: 1 }} placeholder={"User name"} onChangeText={setUsername}
+                id={"username_input"} />
             <Text>Password</Text>
-            <TextInput style={{borderWidth: 1}} secureTextEntry={true} placeholder={"Password"}
-                       onChangeText={setPassword} id={"password_input"}/>
+            <TextInput style={{ borderWidth: 1 }} secureTextEntry={true} placeholder={"Password"}
+                onChangeText={setPassword} id={"password_input"} />
             <TouchableOpacity onPress={() => {
+                // TODO: handle login logic here, for now just show an alert with the entered username and password
                 Alert.alert("User information", `name: ${username}, password: ${password}`);
             }} style={style.button}>
                 <Text>Submit</Text>
@@ -50,7 +53,7 @@ export default function LoginPage() {
             <TouchableOpacity onPress={speak} style={style.button}>
                 <Text>Press to test speech</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={()=> {
+            <TouchableOpacity onPress={() => {
                 // for debugging
                 router.navigate("/allRecipePage")
             }
@@ -59,7 +62,7 @@ export default function LoginPage() {
 
                 <Text>All recipes page</Text>
             </TouchableOpacity>
-                        <TouchableOpacity onPress={()=> {
+            <TouchableOpacity onPress={() => {
                 // for debugging
                 router.navigate("/recipePage")
             }

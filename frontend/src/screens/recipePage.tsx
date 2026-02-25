@@ -71,7 +71,7 @@ export default function RecipePage() {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                     router.back();
-                }}                    style={{ backgroundColor: "green", padding: 10, margin: 10, borderRadius: 5 }}>
+                }} style={{ backgroundColor: "green", padding: 10, margin: 10, borderRadius: 5 }}>
                     <Text style={{ color: "white" }}>return to all recipe</Text>
                 </TouchableOpacity>
             </ScrollView>
