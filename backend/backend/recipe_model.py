@@ -1,4 +1,4 @@
-from database import db
+from .db_manager import db
 
 
 class Recipe(db.Model):

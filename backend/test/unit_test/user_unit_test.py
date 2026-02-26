@@ -1,11 +1,10 @@
-import logging
+import os
 
 import pytest
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 
 from backend import create_app
 from backend.user_model import User
-import os
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -47,7 +46,7 @@ def app(mocker, mock_session):
     sqlalchemy_utils = mocker.MagicMock()
     sqlalchemy_utils.database_exists.return_value = True
     app = create_app(config=os.path.join(os.path.dirname(__file__), "test_config.py"))
-    from backend.database import db
+    from backend.db_manager import db
     mocker.patch.object(db, "session", new=mock_session)
     yield app
     # cleanup the database

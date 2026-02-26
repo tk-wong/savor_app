@@ -1,6 +1,6 @@
 # from flask_login import UserMixin
 
-from backend.database import db
+from backend.db_manager import db
 
 
 # from backend.login_manager import login_manager

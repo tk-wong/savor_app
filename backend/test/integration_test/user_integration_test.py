@@ -1,12 +1,13 @@
+import os
+
 import pytest
+from dotenv import load_dotenv
+from sqlalchemy.orm import close_all_sessions
+from sqlalchemy_utils import drop_database
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
-from sqlalchemy_utils import drop_database
 from backend.user_model import User
-from dotenv import load_dotenv
-from sqlalchemy.orm import close_all_sessions
-import os
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -17,14 +18,14 @@ def load_env():
 @pytest.fixture()
 def app():
     app = create_app(config=os.path.join(os.path.dirname(__file__), "test_config.py"))
-    from backend.database import db
+    from backend.db_manager import db
     # sample_user = User(email="sample@test.com", username="Sample User",password_hash=generate_password_hash("testing"))
     with app.app_context():
         db.create_all()
     yield app
     # cleanup the database
     with app.app_context():
-        from backend.database import db
+        from backend.db_manager import db
         db.drop_all()
         close_all_sessions()
         db.engine.dispose()
@@ -44,7 +45,7 @@ def runner(app):
 @pytest.fixture()
 def sample_user(app):
     with app.app_context():
-        from backend.database import db
+        from backend.db_manager import db
         user = User(email="example@abc.com",
                     username="Example User",
                     password_hash=generate_password_hash("testing"))

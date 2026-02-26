@@ -29,7 +29,7 @@ def login():
         else:
             logging.log(logging.WARNING, f"Invalid password attempt for email: {email}")
         return flask.jsonify({"message": "Invalid credentials"}), 401
-    access_token = create_access_token(identity=user_query.id)
+    access_token = create_access_token(identity=str(user_query.id))
     logging.log(logging.INFO, f"Login successful for email: {email}")
     return flask.jsonify({"message": f"Welcome back, {user_query.username}! ", "user_id": user_query.id,
                           "access_token": access_token}), 200
@@ -54,7 +54,7 @@ def create_user():
         return flask.jsonify({"message": "User with this email already exists"}), 409
     password_hash = generate_password_hash(password)
     new_user = User(email=email, username=username, password_hash=password_hash)
-    from backend.database import db
+    from backend.db_manager import db
     db.session.add(new_user)
     db.session.commit()
     logging.log(logging.INFO, f"User created successfully with email: {email}")
