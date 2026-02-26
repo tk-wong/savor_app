@@ -16,6 +16,8 @@ def create_app(config="config.py"):
     app.register_blueprint(user_blueprint)
     from .chat import chat_blueprint
     app.register_blueprint(chat_blueprint)
+    from .recipe import recipe_blueprint
+    app.register_blueprint(recipe_blueprint)
     # from .login_manager import login_manager
     # login_manager.init_app(app)
     from .jwt_manager import jwt
