@@ -1,6 +1,4 @@
-import flask
-
-from backend import create_app
+# from backend import create_app
 import flask
 
 from backend import create_app

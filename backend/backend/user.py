@@ -2,7 +2,8 @@ import logging
 
 import flask
 from flask import Blueprint, request
-from flask_login import login_user
+from flask_jwt_extended import create_access_token
+# from flask_login import login_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from backend.user_model import User
@@ -28,9 +29,10 @@ def login():
         else:
             logging.log(logging.WARNING, f"Invalid password attempt for email: {email}")
         return flask.jsonify({"message": "Invalid credentials"}), 401
-    login_user(user_query)
+    access_token = create_access_token(identity=user_query.id)
     logging.log(logging.INFO, f"Login successful for email: {email}")
-    return flask.jsonify({"message": f"Welcome back, {user_query.username}! ", "user_id": user_query.id}), 200
+    return flask.jsonify({"message": f"Welcome back, {user_query.username}! ", "user_id": user_query.id,
+                          "access_token": access_token}), 200
 
 @user_blueprint.route('/user/create',methods=['POST'])
 def create_user():
