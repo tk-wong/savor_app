@@ -1,6 +1,6 @@
 from sqlalchemy.dialects.postgresql import JSONB
 
-from db_manager import db
+from .db_manager import db
 
 
 class ChatHistoryModel(db.Model):

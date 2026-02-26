@@ -1,4 +1,4 @@
-from db_manager import db
+from .db_manager import db
 
 
 class RecipeIngredient(db.Model):
