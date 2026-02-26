@@ -5,7 +5,7 @@ from sqlalchemy_utils import database_exists, create_database
 
 
 def create_app(config="config.py"):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
     app.config.from_pyfile(config)
     # print(app.config['SQLALCHEMY_DATABASE_URI'])
     from .db_manager import db
