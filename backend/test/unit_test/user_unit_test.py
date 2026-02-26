@@ -4,7 +4,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
-from backend.user_model import User
+from backend.models.user_model import User
 
 
 @pytest.fixture(scope='session', autouse=True)

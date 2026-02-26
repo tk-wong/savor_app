@@ -6,7 +6,7 @@ from flask_jwt_extended import create_access_token
 # from flask_login import login_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from backend.user_model import User
+from backend.models.user_model import User
 
 user_blueprint = Blueprint('user', __name__)
 

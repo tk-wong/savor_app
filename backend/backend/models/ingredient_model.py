@@ -1,4 +1,4 @@
-from .db_manager import db
+from backend.db_manager import db
 
 
 class Ingredient(db.Model):

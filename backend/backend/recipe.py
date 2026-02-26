@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from .recipe_model import Recipe
+from backend.models.recipe_model import Recipe
 
 recipe_blueprint = Blueprint('recipe', __name__, url_prefix='/recipes')
 
