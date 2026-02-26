@@ -16,5 +16,7 @@ def create_app(config="config.py"):
     app.register_blueprint(chat_blueprint)
     from .login_manager import login_manager
     login_manager.init_app(app)
+    with app.app_context():
+        db.create_all()
     return app
 

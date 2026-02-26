@@ -1,9 +1,10 @@
+import logging
+
 import flask
 from flask import Blueprint, request
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import login_user
+from werkzeug.security import check_password_hash, generate_password_hash
 
-import logging
 from backend.user_model import User
 
 user_blueprint = Blueprint('user', __name__)
@@ -15,8 +16,8 @@ def user():
 
 @user_blueprint.route('/user/login', methods=['POST'])
 def login():
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = request.json.get('email')
+    password = request.json.get('password')
     if not email or not password:
         logging.log(logging.WARNING, "Login attempt with missing email or password")
         return flask.jsonify({"message": "Email and password are required"}), 400
@@ -29,15 +30,21 @@ def login():
         return flask.jsonify({"message": "Invalid credentials"}), 401
     login_user(user_query)
     logging.log(logging.INFO, f"Login successful for email: {email}")
-    return flask.jsonify({"message": f"Welcome back, {user_query.username}!"})
+    return flask.jsonify({"message": f"Welcome back, {user_query.username}! ", "user_id": user_query.id}), 200
 
 @user_blueprint.route('/user/create',methods=['POST'])
 def create_user():
-    email = request.form.get('email')
-    username = request.form.get('username')
-    password = request.form.get('password')
+    email = request.json.get('email')
+    username = request.json.get('username')
+    password = request.json.get('password')
     if not email or not username or not password:
-        logging.log(logging.WARNING, "User creation attempt with missing fields")
+        logging.log(logging.WARNING, "User creation attempt with missing fields: ")
+        if not email:
+            logging.log(logging.WARNING, "User creation attempt with missing email")
+        if not username:
+            logging.log(logging.WARNING, "User creation attempt with missing username")
+        if not password:
+            logging.log(logging.WARNING, "User creation attempt with missing password")
         return flask.jsonify({"message": "Email, username, and password are required"}), 400
     user_query = User.query.filter_by(email=email).first()
     if user_query:
