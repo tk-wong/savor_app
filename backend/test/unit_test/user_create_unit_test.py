@@ -1,5 +1,3 @@
-import logging
-
 import pytest
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -75,55 +73,58 @@ def mock_user_query(mocker, app):
     mock_query = mocker.patch.object(User, "query")
     yield mock_query
 
-
-def test_index(client):
-    response = client.get("/user")
-    assert response.status_code == 200
-    assert response.get_json() == {'message': 'User endpoint'}
-
-
-def test_login(client, sample_user, mock_user_query):
-    # mock_query = mocker.patch.object(User, "query")
-    mock_user_query.filter_by.return_value.first.return_value = sample_user
-    response = client.post("/user/login", data={"email": "example@abc.com", "password": "testing"})
-    print("\nTest sees User:", User)
-    # print(f"\n{type(mock_user_query.return_value.filter_by.return_value.first.return_value)=}")
-    # print(f"\n{type(mock_user_query.return_value.filter_by.return_value.first.return_value.password_hash)=}")
-    # print(f"\n{id(sample_user)=}, {id(mock_user_query.return_value.filter_by.return_value.first.return_value)=}")
-    assert response.status_code == 200
-    assert response.get_json() == {'message': 'Welcome back, Example User!'}
-
-
-def test_invalid_user(client, sample_user, mock_user_query):
+def test_create_user(client, mock_user_query):
     mock_user_query.filter_by.return_value.first.return_value = None
-    response = client.post("/user/login", data={"email": "notexist@abc.com", "password": "testing"})
-    assert response.status_code == 401
-    assert response.get_json() == {'message': 'Invalid credentials'}
+    email = "example@abc.com"
+    username = "Example User"
+    password = "testing"
+    response = client.post("/user/create", data={
+        "email": email,
+        "username": username,
+        "password": password
+    })
+    assert response.status_code == 201
+    assert response.get_json() == {"message": f"User {username} created successfully!"}
 
-
-def test_invalid_password(client, sample_user, mock_user_query):
+def test_create_user_existing_email(client, mock_user_query,sample_user):
     mock_user_query.filter_by.return_value.first.return_value = sample_user
-    response = client.post("/user/login", data={"email": "example@abc.com", "password": "wrong_password"})
-    assert response.status_code == 401
-    assert response.get_json() == {'message': 'Invalid credentials'}
+    email = "example@abc.com"
+    username = "Example User"
+    password = "testing"
+    response = client.post("/user/create", data={
+        "email": email,
+        "username": username,
+        "password": password
+    })
+    assert response.status_code == 409
+    assert response.get_json() == {"message": "User with this email already exists"}
 
-
-def test_missing_email(client):
-    response = client.post("/user/login", data={"password": "testing"})
+def test_create_user_missing_email(client):
+    username = "Example User"
+    password = "testing"
+    response = client.post("/user/create", data={
+        "username": username,
+        "password": password
+    })
     assert response.status_code == 400
-    assert response.get_json() == {'message': 'Email and password are required'}
+    assert response.get_json() == {"message": "Email, username, and password are required"}
 
-
-def test_missing_password(client):
-    response = client.post("/user/login", data={"email": "example@abc.com"})
+def test_create_user_missing_username(client):
+    email = "example@abc.com"
+    password = "testing"
+    response = client.post("/user/create", data={
+        "email": email,
+        "password": password
+    })
     assert response.status_code == 400
-    assert response.get_json() == {'message': 'Email and password are required'}
+    assert response.get_json() == {"message": "Email, username, and password are required"}
 
-def test_empty_email_and_password(client):
-    response = client.post("/user/login", data={})
+def test_create_user_missing_password(client):
+    email = "example@abc.com"
+    username = "Example User"
+    response = client.post("/user/create", data={
+        "email": email,
+        "username": username,
+    })
     assert response.status_code == 400
-    assert response.get_json() == {'message': 'Email and password are required'}
-
-def test_incorrect_request_method(client):
-    response = client.get("/user/login")
-    assert response.status_code == 405  # Method Not Allowed
+    assert response.get_json() == {"message": "Email, username, and password are required"}
