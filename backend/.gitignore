@@ -1,3 +1,12 @@
 .env*
-__pycache__/
+/**/*.png
 *.pyc
+
+# migration
+migrations/
+
+# pycharm
+.idea/
+
+# pycharm for testinng http server
+*.http

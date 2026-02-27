@@ -1,0 +1,23 @@
+# ignore python virtual environments and bytecode files
+.venv
+__pycache__
+venv
+*.pyc
+
+# some folders unused files and IDE files
+.idea
+unused
+
+# ignore environment variables file
+.env
+
+# ignore image files for testing
+pizza
+*png
+*webp
+
+# ignore some other files for testing and documentation
+.gitignore
+Readme.md
+result.txt
+test_model.py

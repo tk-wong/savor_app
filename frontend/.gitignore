@@ -44,3 +44,7 @@ app-example
 
 # jest cache
 .jest/*
+
+# ide settings
+.vscode/
+.idea/

@@ -7,11 +7,18 @@ requires-python = ">=3.12"
 dependencies = [
     "chromadb>=1.4.1",
     "datasets>=4.5.0",
+    "deepeval>=3.8.4",
+    "dotenv>=0.9.9",
+    "flask>=3.1.2",
+    "kagglehub[polars-datasets]>=1.0.0",
     "langchain>=1.2.6",
     "langchain-chroma>=1.1.0",
     "langchain-ollama>=1.0.1",
+    "langchain-postgres>=0.0.16",
     "ollama>=0.6.1",
     "polars>=1.37.1",
+    "psycopg2-binary>=2.9.11",
+    "sqlalchemy-utils>=0.42.1",
     "tqdm>=4.67.1",
 ]
 

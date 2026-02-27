@@ -6,3 +6,5 @@
 
 db_data
 pgadmin_data
+
+/**/*.http
