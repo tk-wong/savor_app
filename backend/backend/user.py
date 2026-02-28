@@ -31,8 +31,8 @@ def login():
         return flask.jsonify({"message": "Invalid credentials"}), 401
     access_token = create_access_token(identity=str(user_query.id))
     logging.log(logging.INFO, f"Login successful for email: {email}")
-    return flask.jsonify({"message": f"Welcome back, {user_query.username}! ", "user_id": user_query.id,
-                          "access_token": access_token}), 200
+    message = {"user": {"id": user_query.id, "username": user_query.username, "access_token": access_token}}
+    return flask.jsonify(message), 200
 
 @user_blueprint.route('/user/create',methods=['POST'])
 def create_user():
