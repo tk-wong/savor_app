@@ -28,4 +28,4 @@ def get_recipe(recipe_id):
                "direction": recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.ingredient.id, "name": ingredient.ingredient.name, "quantity": ingredient.quantity} for
             ingredient in ingredients]}
-    return {"recipe": recipe}, 200
+    return {"recipe": message}, 200
