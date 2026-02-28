@@ -3,7 +3,7 @@ import axios from "axios";
 const apiClient = axios.create({
   baseURL: "http://192.168.0.155:5000/api",
   timeout: 120000, // 120 seconds, 2 minutes
-  // headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json' },
 });
 
 apiClient.interceptors.response.use(
@@ -18,3 +18,5 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
+// TODO: add token to headers for authenticated requests, and handle token refresh if needed
