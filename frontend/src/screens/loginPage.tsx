@@ -1,40 +1,47 @@
-import { Text, TextInput, View, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import * as Speech from 'expo-speech';
+
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
-import { useRouter } from 'expo-router';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { login, testUser } from "../api";
+import { router } from "expo-router";
 
 export default function LoginPage() {
-    const [username, setUsername] = useState("")
+    const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-    const speak = () => {
-        const thingToSay = 'testing 123';
-        Speech.speak(thingToSay,
-            {
-                language: "en-US",
-                rate: 0.8,
-            });
-    };
 
-    const router = useRouter();
+
+    
+    const loginHandler = () => {
+        if (!email || !password) {
+            Alert.alert("Error", "Please enter both email and password");
+            return;
+        }
+        login(email, password).then((data) => {
+            Alert.alert("Login successful", `Token: ${data.token}`);
+            console.log(data);
+        }).catch((error) => {
+            Alert.alert("Login failed", `Error: ${error}`);
+        });
+    }
     return (
-        <View
-            style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-            }}
+        <SafeAreaView
+            // style={{
+            //     flex: 1,
+            //     justifyContent: "center",
+            //     alignItems: "center",
+            // }}
         >
             <Text>Welcome</Text>
-            <Text>User Name:</Text>
-            <TextInput style={{ borderWidth: 1 }} placeholder={"User name"} onChangeText={setUsername}
+            <Text>Email:</Text>
+            <TextInput style={{ borderWidth: 1 }} placeholder={"User name"} onChangeText={setEmail}
                 id={"username_input"} />
             <Text>Password</Text>
             <TextInput style={{ borderWidth: 1 }} secureTextEntry={true} placeholder={"Password"}
                 onChangeText={setPassword} id={"password_input"} />
-            <TouchableOpacity onPress={() => {
-                // TODO: handle login logic here, for now just show an alert with the entered username and password
-                Alert.alert("User information", `name: ${username}, password: ${password}`);
-            }} style={style.button}>
+            <TouchableOpacity onPress={
+                loginHandler
+            }
+                style={style.button}>
                 <Text>Submit</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
@@ -45,33 +52,12 @@ export default function LoginPage() {
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {
                 // for debugging
-                router.navigate("/chatPage")
-            }
-            } style={style.button}>
-                <Text>Chat page</Text>
+                router.push("/functionTestingPage")
+            }} style={style.button}>
+                <Text>Function testing page</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={speak} style={style.button}>
-                <Text>Press to test speech</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.navigate("/allRecipePage")
-            }
 
-            } style={style.button}>
-
-                <Text>All recipes page</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.navigate("/recipePage")
-            }
-
-            } style={style.button}>
-
-                <Text>Recipe page</Text>
-            </TouchableOpacity>
-        </View>
+        </SafeAreaView >
     );
 }
 const style = StyleSheet.create(

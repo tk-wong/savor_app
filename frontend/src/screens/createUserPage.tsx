@@ -1,7 +1,8 @@
 import { ScrollView, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 
 export default function CreateUserPage() {
+    const router = useRouter();
     return (
         <>
             <Stack.Screen
@@ -23,6 +24,15 @@ export default function CreateUserPage() {
                 }} style={style.button}>
                     <Text>Submit</Text>
                 </TouchableOpacity>
+                            <TouchableOpacity onPress={() => {
+                                // for debugging
+                                router.navigate("/loginPage")
+                            }
+                
+                            } style={style.button}>
+                
+                                <Text>Back to Login page</Text>
+                            </TouchableOpacity>
             </ScrollView>
         </>
     )
