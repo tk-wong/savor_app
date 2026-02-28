@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask
 from sqlalchemy_utils import database_exists, create_database
 
@@ -21,16 +19,18 @@ def create_app(config="config.py"):
         db.create_all()
     from backend.db_manager import migrate
     migrate.init_app(app, db)
-    from backend.user import user_blueprint
-    app.register_blueprint(user_blueprint)
-    from backend.chat import chat_blueprint
-    app.register_blueprint(chat_blueprint)
-    from backend.recipe import recipe_blueprint
-    app.register_blueprint(recipe_blueprint)
+    # from backend.user import user_blueprint
+    # app.register_blueprint(user_blueprint)
+    # from backend.chat import chat_blueprint
+    # app.register_blueprint(chat_blueprint)
+    # from backend.recipe import recipe_blueprint
+    # app.register_blueprint(recipe_blueprint)
+    from backend.api import api_blueprint
+    app.register_blueprint(api_blueprint)
     # from .login_manager import login_manager
     # login_manager.init_app(app)
     from backend.jwt_manager import jwt
     jwt.init_app(app)
-    app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+    app.config['JWT_SECRET_KEY'] = app.config["JWT_SECRET_KEY"]
     return app
 
