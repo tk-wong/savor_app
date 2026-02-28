@@ -38,3 +38,5 @@ def chat():
             f.write(image_response.content)
         return response_data, 200
     return {"message": "Error generating response"}, 500
+
+# TODO: chat history, save to database, and retrieve from database
