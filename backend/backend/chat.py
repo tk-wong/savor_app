@@ -2,15 +2,26 @@ import os
 
 import requests
 from flask import Blueprint, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
-chat_blueprint = Blueprint('chat', __name__)
+from backend.models.chat_group_model import ChatGroupModel
+from backend.models.chat_history_model import ChatHistoryModel
+
+chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
 
 
-@chat_blueprint.route('/chat', methods=['POST'])
+@jwt_required()
+@chat_blueprint.route('/', methods=['POST'])
 def chat():
     prompt = request.json.get('prompt')
+    chat_group_id = request.json.get('chat_group_id')
     if not prompt:
         return {"message": "Prompt is required"}, 400
+    if not chat_group_id:
+        return {"message": "Chat group ID is required"}, 400
+    chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
+    if not chat_group:
+        return {"message": "Chat group not found"}, 404
     model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt})
     if model_response.status_code != 200:
         return {"message": "Error generating response"}, 500
@@ -21,22 +32,62 @@ def chat():
     prompt_type = response_data.get("prompt_type")
     if not prompt_type:
         return {"message": "Response missing prompt_type"}, 500
+    new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(get_jwt_identity()), prompt=prompt,
+                                        response=response_data)
+    from backend.db_manager import db
+    db.session.add(new_chat_history)
+    db.session.commit()
     if prompt_type == "question":
+        if chat_group.name == "Unnamed":
+            chat_group.name = prompt[:20] + "..." if len(prompt) > 20 else prompt
+            db.session.commit()
         return response_data, 200
     elif prompt_type == "recipe":
         recipe_data = response_data.get("recipe")
         if not recipe_data:
             return {"message": "Response missing recipe data"}, 500
         recipe_title = recipe_data.get("title")
+        if chat_group.name == "Unnamed" and recipe_title:
+            chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
+            db.session.commit()
         image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title})
         if image_response.status_code != 200:
             return {"message": "Error generating image from the image generation model"}, 500
         if not os.path.exists("static/images"):
             os.makedirs("static/images")
         safe_filename = os.path.basename(recipe_title)
-        with open(f"static/images/{safe_filename}.png", "wb") as f:
+        image_url = f"static/images/{safe_filename}.png"
+        with open(image_url, "wb") as f:
             f.write(image_response.content)
+        response_data["image_url"] = image_url
+        new_chat_history.image_url = image_url
+        db.session.commit()
         return response_data, 200
     return {"message": "Error generating response"}, 500
 
-# TODO: chat history, save to database, and retrieve from database
+
+@jwt_required()
+@chat_blueprint.route('/group/new', methods=['GET'])
+def create_new_group():
+    user_id = int(get_jwt_identity())
+    new_group = ChatGroupModel(user_id=user_id)
+    from backend.db_manager import db
+    db.session.add(new_group)
+    db.session.commit()
+    return {"message": "New chat group created", "group_id": new_group.id}, 200
+
+
+@jwt_required()
+@chat_blueprint.route('/group/<int:group_id>/history', methods=['GET'])
+def get_chat_history(group_id):
+    user_id = int(get_jwt_identity())
+    chat_group = ChatGroupModel.query.filter_by(id=group_id).first()
+    if not chat_group:
+        return {"message": "Chat group not found"}, 404
+    if chat_group.user_id != user_id:
+        return {"message": "Unauthorized access to chat group"}, 403
+    chat_history = ChatHistoryModel.query.filter_by(chat_group_id=group_id).all()
+    history_data = [
+        {"id": history.id, "prompt": history.prompt, "response": history.response, "image_url": history.image_url} for
+        history in chat_history]
+    return {"chat_history": history_data}, 200
