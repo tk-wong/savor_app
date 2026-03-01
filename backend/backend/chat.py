@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import requests
 from flask import Blueprint, request
@@ -56,7 +57,7 @@ def chat():
         if not os.path.exists("static/images"):
             os.makedirs("static/images")
         safe_filename = os.path.basename(recipe_title)
-        image_url = f"static/images/{safe_filename}.png"
+        image_url = f"static/images/{uuid.uuid4()}.png"
         with open(image_url, "wb") as f:
             f.write(image_response.content)
         response_data["image_url"] = image_url
