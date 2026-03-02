@@ -5,10 +5,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Platform, useColorScheme, View } from "react-native";
 import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getNewChatGroup, sendMessage } from "../api/chat";
+import { isAxiosError } from "axios";
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
     const [listening, setlstening] = useState(false);
+    const [chatGroupId, setChatGroupId] = useState<number | null>(null);
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
     const keyboardVerticalOffset = Platform.select({
@@ -32,6 +35,58 @@ export default function ChatPage() {
     }, [])
 
     const onSend = useCallback((messages: IMessage[] = []) => {
+        if(messages.length === 0) {
+            return;
+        }
+        if(chatGroupId === null) {
+            getNewChatGroup().then((response) => {
+                console.log("New chat group created with ID:", response.group_id);
+                setChatGroupId(response.group_id);
+            }).catch((error) => {
+                console.error("Error creating new chat group:", error);
+                if (isAxiosError(error)) {
+                    console.error("Axios error details:", {
+                        message: error.message,
+                        response: error.response
+                            ? {
+                                status: error.response.status,
+                                data: error.response.data,
+                            }
+                            : null,
+                    });
+                }
+            })
+            return;
+        }
+        sendMessage(messages[0].text, chatGroupId!).then((response) => {
+            const botMessage: IMessage = {
+                _id: Math.random(),
+                text: response.prompt_type,
+                createdAt: new Date(),
+                user: {
+                    _id: 2,
+                    name: 'SavorBot',
+                    avatar: 'https://placeimg.com/140/140/any',
+                },
+            }
+            setMessages(previousMessages =>
+                GiftedChat.append(previousMessages, [botMessage]),
+            )
+        }).catch((error) => {
+            console.error("Error sending message:", error);
+            if (isAxiosError(error)) {
+                console.error("Axios error details:", {
+                    message: error.message,
+                    response: error.response
+                    ? {
+                        status: error.response.status,
+                        data: error.response.data,
+                    }
+                    : null,
+                });
+            }
+            return;
+        })
         setMessages(previousMessages =>
             GiftedChat.append(previousMessages, messages),
         )
