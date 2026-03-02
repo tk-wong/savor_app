@@ -12,8 +12,8 @@ from backend.models.recipe_model import Recipe
 chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
 
 
-@jwt_required()
 @chat_blueprint.route('/', methods=['POST'])
+@jwt_required()
 def chat():
     prompt = request.json.get('prompt')
     chat_group_id = request.json.get('chat_group_id')
@@ -73,8 +73,8 @@ def chat():
     return {"message": "Error generating response"}, 500
 
 
-@jwt_required()
 @chat_blueprint.route('/group/new', methods=['GET'])
+@jwt_required()
 def create_new_group():
     user_id = int(get_jwt_identity())
     new_group = ChatGroupModel(user_id=user_id)
@@ -84,8 +84,8 @@ def create_new_group():
     return {"message": "New chat group created", "group_id": new_group.id}, 200
 
 
-@jwt_required()
 @chat_blueprint.route('/group/<int:group_id>/history', methods=['GET'])
+@jwt_required()
 def get_chat_history(group_id):
     user_id = int(get_jwt_identity())
     chat_group = ChatGroupModel.query.filter_by(id=group_id).first()
