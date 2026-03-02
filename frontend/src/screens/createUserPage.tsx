@@ -16,9 +16,6 @@ export default function CreateUserPage() {
         }
         try {
             const response = await createUser(email, username, password);
-            if (response && response.data && response.data.success) {
-                console.log("User created successfully:", response);
-            }
             Alert.alert("User created", "User created successfully! Please log in.");
             router.navigate("/loginPage");
         } catch (error) {

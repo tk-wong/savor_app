@@ -2,7 +2,7 @@
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { login, testUser } from "../api";
+import { login } from "../api";
 import { router } from "expo-router";
 
 export default function LoginPage() {
@@ -17,8 +17,9 @@ export default function LoginPage() {
             return;
         }
         login(email, password).then((data) => {
-            Alert.alert("Login successful", `Token: ${data.token}`);
+            Alert.alert("Login successful");
             console.log(data);
+            router.push("/chatPage");
         }).catch((error) => {
             Alert.alert("Login failed", `Error: ${error}`);
         });

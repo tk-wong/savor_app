@@ -10,7 +10,8 @@ export const login = async (email: string, password: string) : Promise<LoginResp
       email: email,
       password: password,
     });
-    const token = response.data.token; // Assuming the token is in response.data.token
+    console.log("Login successful:", response.data);
+    const token = response.data.user.access_token; // Assuming the token is in response.data.token
     // Store the token securely (e.g., using SecureStore in Expo)
     await SecureStore.setItemAsync("userToken", token);
     return response.data; // Assuming the token is in response.data
