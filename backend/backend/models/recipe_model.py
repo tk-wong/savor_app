@@ -9,6 +9,7 @@ class Recipe(db.Model):
     description: db.Column = db.Column(db.Text, nullable=True)
     tips: db.Column = db.Column(db.Text, nullable=True)
     create_user_id: db.Column = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    image_url: db.Column = db.Column(db.String(255), nullable=True)
 
     def __repr__(self):
         return f'<Recipe {self.title}, id: {self.id}>'

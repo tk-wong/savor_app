@@ -11,10 +11,6 @@ from backend.models.user_model import User
 user_blueprint = Blueprint('user', __name__)
 
 
-@user_blueprint.route('/user')
-def user():
-    return flask.jsonify({"message": "User endpoint"})
-
 @user_blueprint.route('/user/login', methods=['POST'])
 def login():
     email = request.json.get('email')
