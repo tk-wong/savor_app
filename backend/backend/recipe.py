@@ -12,7 +12,8 @@ recipe_blueprint = Blueprint('recipe', __name__, url_prefix='/recipes')
 @jwt_required()
 def get_recipes():
     user_id = int(get_jwt_identity())
-    all_recipe = Recipe.query(Recipe.id, Recipe.title, Recipe.image_url).filter_by(create_user_id=user_id).all()
+    from backend.db_manager import db
+    all_recipe = db.session.query(Recipe.id, Recipe.title, Recipe.image_url).filter_by(create_user_id=user_id).all()
     return {"recipes": [{'id': recipe_id, 'title': title, 'image_url': image_url} for recipe_id, title, image_url in
                         all_recipe]}, 200
 
