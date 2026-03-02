@@ -1,6 +1,7 @@
+import { AllRecipeResponse, RecipeResponse } from "../types/response";
 import apiClient from "./client";
 
-export const getAllRecipes = async () => {
+export const getAllRecipes = async (): Promise<AllRecipeResponse> => {
     try {
         const response = await apiClient.get("/recipes");
         return response.data; // Assuming the response contains the list of recipes
@@ -10,7 +11,7 @@ export const getAllRecipes = async () => {
     }
 }
 
-export const getRecipeById = async (id: string) => {
+export const getRecipeById = async (id: string): Promise<RecipeResponse> => {
     try {
         const response = await apiClient.get(`/recipes/${id}`);
         return response.data; // Assuming the response contains the recipe details

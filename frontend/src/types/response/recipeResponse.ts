@@ -1,5 +1,5 @@
 import { DetailRecipe } from "../recipe";
 
-interface RecipeResponse {
+export interface RecipeResponse {
  recipe: DetailRecipe;
 }

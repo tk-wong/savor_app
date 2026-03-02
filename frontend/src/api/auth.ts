@@ -30,23 +30,4 @@ export const createUser = async (email: string, username: string, password: stri
   }
 };
 
-export const testUser = async () => {
-  try {
-    const response = await apiClient.get("/user");
-    return response.data; // Assuming the token is in response.data
-  } catch (error: unknown) {
-    console.error("Test user failed:", error);
-    if (axios.isAxiosError(error)) {
-      console.error("Axios error details:", {
-        message: error.message,
-        response: error.response
-          ? {
-              status: error.response.status,
-              data: error.response.data,
-            }
-          : null,
-      });
-    }
-    throw error;
-  }
-};
+
