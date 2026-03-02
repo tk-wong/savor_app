@@ -1,5 +1,6 @@
 
 import axios from "axios";
+import { Alert } from "react-native";
 
 
 export class ApiRequestError extends Error {

@@ -1,6 +1,6 @@
 export interface DetailRecipe {
   id: number;
-  title: string;
+  name: string;
   ingredients: string[];
   instructions: string[];
   description: string;

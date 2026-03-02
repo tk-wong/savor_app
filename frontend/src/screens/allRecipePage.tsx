@@ -1,8 +1,11 @@
-import { FlatList, Image, ImageSourcePropType, ListRenderItem, Platform, Text, TouchableOpacity, View } from "react-native";
-import React, { useState } from "react";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import { Alert, FlatList, Image, ImageSourcePropType, ListRenderItem, Platform, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ApiRequestError } from "../api/apiRequestError";
+import { getAllRecipes } from "../api/recipe";
+import { Recipe } from "../types";
 
 export default function AllRecipePage() {
     const headerHeight = useHeaderHeight();
@@ -12,34 +15,36 @@ export default function AllRecipePage() {
     //     android: headerHeight, // Android often handles it better with just the header height
     // });
     return <View>
-        <Text>All Recipes</Text>
         <RecipeCard />
         {Platform.OS === 'android' && <View style={{ height: insets.bottom }} />}
     </View>
 }
 
-interface Recipe {
+interface RecipeCardItem {
     id: number;
     name: string;
     image: ImageSourcePropType;
 }
 
 function RecipeCard() {
-    const [recipe_list, setRecipeList] = useState<Recipe[]>(Array.from({ length: 10 }, (_, i) => {
-        return { name: `Recipe ${i}`, id: i, image: require("../../assets/images/react-logo.png") }
-    }
-    )
-    );
+    const [recipeList, setRecipeList] = useState<RecipeCardItem[]>([]);
     // TODO: fetch recipe list from backend and display it in a card format
 
-    //  useEffect(() => {
-    //      const list = Array.from({ length: 11 }, (_, i) => `Recipe ${i}`);
-    //      setRecipeList(list);
-    //  }, []);
-    // const message = recipe_list.map((recipe) => {
-    //     return <Text>{recipe}</Text>
-    // })
-    const renderItem: ListRenderItem<Recipe> = ({ item }) => {
+    useFocusEffect(useCallback(() => {
+        console.log("Fetching all recipes");
+        getAllRecipes().then((data) => {
+            const formattedRecipes = data.recipes.map((recipe: Recipe) => ({
+                id: recipe.id,
+                name: recipe.title,
+                image: { uri: recipe.image_url }, // Convert image URL to ImageSourcePropType
+            }));
+            setRecipeList(formattedRecipes);
+        }).catch((error: ApiRequestError) => {
+            console.error("Error fetching recipes:", error.message);
+            Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching all recipes.");
+        })
+    },[]));
+    const renderItem: ListRenderItem<RecipeCardItem> = ({ item }) => {
         return <TouchableOpacity onPress={() => {
             console.log(`Recipe id: ${item.id}`);
             router.push({ pathname: `/recipePage`, params: { id: item.id } })
@@ -51,7 +56,7 @@ function RecipeCard() {
     };
     return (
 
-        <FlatList data={recipe_list} renderItem={renderItem} numColumns={2}
+        <FlatList data={recipeList} renderItem={renderItem} numColumns={2}
             keyExtractor={(item) => item.id.toString()} />
 
     )
