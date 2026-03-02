@@ -7,8 +7,8 @@ export const sendMessage = async (prompt: string, group_id: number): Promise<Cha
     try {
         const response = await apiClient.post("/chat", {
             prompt: prompt,
-            group_id: group_id
-        });
+            chat_group_id: group_id
+        }, {timeout: 120000}); 
         return response.data; // Assuming the response contains the chat reply
     } catch (error) {
         console.error("Error sending message:", error);
