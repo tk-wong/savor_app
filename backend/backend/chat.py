@@ -24,7 +24,7 @@ def chat():
     chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404
-    model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt})
+    model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt}, timeout=60)
     if model_response.status_code != 200:
         return {"message": "Error generating response"}, 500
     try:
@@ -54,7 +54,7 @@ def chat():
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
-        image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title})
+        image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},timeout=60)
         if image_response.status_code != 200:
             return {"message": "Error generating image from the image generation model"}, 500
         if not os.path.exists("static/images"):
@@ -77,7 +77,7 @@ def chat():
 @jwt_required()
 def create_new_group():
     user_id = int(get_jwt_identity())
-    new_group = ChatGroupModel(user_id=user_id)
+    new_group = ChatGroupModel(create_user_id=user_id)
     from backend.db_manager import db
     db.session.add(new_group)
     db.session.commit()
