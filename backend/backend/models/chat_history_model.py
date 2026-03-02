@@ -1,6 +1,7 @@
 from sqlalchemy.dialects.postgresql import JSONB
 
 from backend.db_manager import db
+from backend.models.chat_group_model import ChatGroupModel
 
 
 class ChatHistoryModel(db.Model):
@@ -11,6 +12,8 @@ class ChatHistoryModel(db.Model):
     chat_group_id: db.Column = db.Column(db.Integer, db.ForeignKey('chat_groups.id'), nullable=False)
     image_url: db.Column = db.Column(db.String(255), nullable=True)
     timestamp: db.Column = db.Column(db.DateTime, nullable=False)
+    chat_group = db.relationship("ChatGroupModel",
+        back_populates="chat_histories")
 
     def __repr__(self):
         return f'<ChatHistory user_id: {self.user_id}, message: {self.message}, timestamp: {self.timestamp}, id: {self.id}>'

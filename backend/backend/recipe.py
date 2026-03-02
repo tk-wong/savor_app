@@ -28,5 +28,5 @@ def get_recipe(recipe_id):
     message = {"id": recipe.id, "title": recipe.title, "description": recipe.description,
                "direction": recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.ingredient.id, "name": ingredient.ingredient.name, "quantity": ingredient.quantity} for
-            ingredient in ingredients], "image_url": recipe.image_url} 
+            ingredient in ingredients], "image_url": recipe.image_url}
     return {"recipe": message}, 200
