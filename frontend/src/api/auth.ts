@@ -1,19 +1,7 @@
 import axios from "axios";
 import apiClient from "./client";
-
-interface LoginResponse {
-  user: User;
-}
-
-interface User{
-  email: string;
-  username: string;
-  token: string;
-}
-
-interface CreateUserResponse {
-  message: string;
-}
+import { LoginResponse } from "../types/response/loginResponse";
+import { CreateUserResponse } from "../types/response/createUserResponse";
 
 export const login = async (email: string, password: string) : Promise<LoginResponse>=> {
   try {

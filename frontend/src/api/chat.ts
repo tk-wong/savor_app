@@ -1,6 +1,8 @@
 import apiClient from "./client";
+import { ChatResponse } from "../types/response";
 
-export const sendMessage = async (prompt: string) => {
+
+export const sendMessage = async (prompt: string): Promise<ChatResponse> => {
     try {
         const response = await apiClient.post("/chat", {
             prompt: prompt,
