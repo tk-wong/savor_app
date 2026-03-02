@@ -3,6 +3,7 @@ import apiClient from "./client";
 import { LoginResponse } from "../types/response/loginResponse";
 import { CreateUserResponse } from "../types/response/createUserResponse";
 import * as SecureStore from 'expo-secure-store';
+import { mapApiError } from "./apiRequestError";
 
 export const login = async (email: string, password: string) : Promise<LoginResponse>=> {
   try {
@@ -16,8 +17,7 @@ export const login = async (email: string, password: string) : Promise<LoginResp
     await SecureStore.setItemAsync("userToken", token);
     return response.data; // Assuming the token is in response.data
   } catch (error) {
-    console.error("Login failed:", error);
-    throw error;
+    throw mapApiError(error);
   }
 };
 
@@ -31,7 +31,7 @@ export const createUser = async (email: string, username: string, password: stri
     return response.data; // Assuming the token is in response.data
   } catch (error) {
     console.error("Registration failed:", error);
-    throw error;
+    throw mapApiError(error);
   }
 };
 

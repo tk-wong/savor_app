@@ -1,12 +1,12 @@
 import { Feather } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { isAxiosError } from "axios";
 import React, { useCallback, useEffect, useState } from 'react';
-import { Platform, useColorScheme, View } from "react-native";
+import { Alert, Platform, useColorScheme, View } from "react-native";
 import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getNewChatGroup, sendMessage } from "../api/chat";
+import { ApiRequestError } from "../api/apiRequestError";
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
@@ -67,19 +67,10 @@ export default function ChatPage() {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
                 )
-            }).catch((error) => {
-                console.error("Error sending message:", error);
-                if (isAxiosError(error)) {
-                    console.error("Axios error details:", {
-                        message: error.message,
-                        response: error.response
-                            ? {
-                                status: error.response.status,
-                                data: error.response.data,
-                            }
-                            : null,
-                    });
-                }
+            }).catch((error:ApiRequestError) => {
+                console.error("Error sending message:", error.message);
+                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
+
             })
         };
 
@@ -88,19 +79,9 @@ export default function ChatPage() {
                 console.log("New chat group created with ID:", response.group_id);
                 setChatGroupId(response.group_id);
                 sendToBackend(response.group_id);
-            }).catch((error) => {
-                console.error("Error creating new chat group:", error);
-                if (isAxiosError(error)) {
-                    console.error("Axios error details:", {
-                        message: error.message,
-                        response: error.response
-                            ? {
-                                status: error.response.status,
-                                data: error.response.data,
-                            }
-                            : null,
-                    });
-                }
+            }).catch((error:ApiRequestError) => {
+                console.error("Error creating new chat group:", error.message);
+                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while creating chat group.");
             })
         } else {
             sendToBackend(chatGroupId);

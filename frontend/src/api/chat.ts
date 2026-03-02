@@ -1,6 +1,7 @@
 import apiClient from "./client";
 import { ChatResponse } from "../types/response";
 import { CreateChatGroupResponse } from "../types/response/CreateChatGroupResponse";
+import { mapApiError } from "./apiRequestError";
 
 
 export const sendMessage = async (prompt: string, group_id: number): Promise<ChatResponse> => {
@@ -11,8 +12,7 @@ export const sendMessage = async (prompt: string, group_id: number): Promise<Cha
         }, {timeout: 120000}); 
         return response.data; // Assuming the response contains the chat reply
     } catch (error) {
-        console.error("Error sending message:", error);
-        throw error;
+        throw mapApiError(error);
     }
 
 }
@@ -22,7 +22,6 @@ export const getNewChatGroup = async (): Promise<CreateChatGroupResponse> => {
         const response = await apiClient.get("/chat/group/new");
         return response.data; // Assuming the response contains the new chat group ID
     } catch (error) {
-        console.error("Error creating new chat group:", error);
-        throw error;
+        throw mapApiError(error);
     }
 }

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import { Alert } from 'react-native';
 
 const apiClient = axios.create({
   baseURL: "http://192.168.0.155:5000/api",
@@ -17,7 +18,9 @@ apiClient.interceptors.response.use(
       console.error("Unauthorized access - redirecting to login");
       // Optionally, you can clear the stored token here
       SecureStore.deleteItemAsync("userToken");
-      // Redirect to login page (this depends on your navigation setup)
+      Alert.alert("Session expired", "Your session has expired. Please log in again.", [
+        { text: "OK", onPress: () => router.navigate("/loginPage") }
+      ]);
       router.navigate("/loginPage");
     }
     return Promise.reject(error);
