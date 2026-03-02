@@ -2,6 +2,7 @@ import axios from "axios";
 import apiClient from "./client";
 import { LoginResponse } from "../types/response/loginResponse";
 import { CreateUserResponse } from "../types/response/createUserResponse";
+import * as SecureStore from 'expo-secure-store';
 
 export const login = async (email: string, password: string) : Promise<LoginResponse>=> {
   try {
@@ -9,6 +10,9 @@ export const login = async (email: string, password: string) : Promise<LoginResp
       email: email,
       password: password,
     });
+    const token = response.data.token; // Assuming the token is in response.data.token
+    // Store the token securely (e.g., using SecureStore in Expo)
+    await SecureStore.setItemAsync("userToken", token);
     return response.data; // Assuming the token is in response.data
   } catch (error) {
     console.error("Login failed:", error);

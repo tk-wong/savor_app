@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as SecureStore from 'expo-secure-store';
 
 const apiClient = axios.create({
   baseURL: "http://192.168.0.155:5000/api",
@@ -17,6 +18,18 @@ apiClient.interceptors.response.use(
   },
 );
 
+apiClient.interceptors.request.use(
+  async (config) => {
+    // You can add authorization headers here if needed, e.g., from localStorage
+    const token = await SecureStore.getItemAsync("userToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export default apiClient;
 
-// TODO: add token to headers for authenticated requests, and handle token refresh if needed
+// TODO: handle token refresh (optional)
