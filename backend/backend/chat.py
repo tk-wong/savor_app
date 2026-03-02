@@ -24,7 +24,10 @@ def chat():
     chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404
-    model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt}, timeout=60)
+    try:
+        model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt}, timeout=60)
+    except (requests.exceptions.Timeout , requests.exceptions.ConnectionError):
+        return {"message": "Model response timed out"}, 504
     if model_response.status_code != 200:
         return {"message": "Error generating response"}, 500
     try:
@@ -54,7 +57,10 @@ def chat():
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
-        image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},timeout=60)
+        try:
+            image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},timeout=60)
+        except (requests.exceptions.Timeout , requests.exceptions.ConnectionError):
+            return {"message": "Image generation timed out"}, 504
         if image_response.status_code != 200:
             return {"message": "Error generating image from the image generation model"}, 500
         if not os.path.exists("static/images"):
