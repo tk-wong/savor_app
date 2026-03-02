@@ -41,7 +41,6 @@ function RecipeCard() {
     // })
     const renderItem: ListRenderItem<Recipe> = ({ item }) => {
         return <TouchableOpacity onPress={() => {
-            // TODO: navigate to recipe detail page with the recipe id
             console.log(`Recipe id: ${item.id}`);
             router.push({ pathname: `/recipePage`, params: { id: item.id } })
         }

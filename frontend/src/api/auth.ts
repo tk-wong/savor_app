@@ -1,7 +1,21 @@
 import axios from "axios";
 import apiClient from "./client";
 
-export const login = async (email: string, password: string) => {
+interface LoginResponse {
+  user: User;
+}
+
+interface User{
+  email: string;
+  username: string;
+  token: string;
+}
+
+interface CreateUserResponse {
+  message: string;
+}
+
+export const login = async (email: string, password: string) : Promise<LoginResponse>=> {
   try {
     const response = await apiClient.post("/user/login", {
       email: email,
@@ -14,7 +28,7 @@ export const login = async (email: string, password: string) => {
   }
 };
 
-export const createUser = async (email: string, username: string, password: string) => {
+export const createUser = async (email: string, username: string, password: string): Promise<CreateUserResponse> => {
   try {
     const response = await apiClient.post("/user/create", {
       email: email,
