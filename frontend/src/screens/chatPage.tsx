@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat'
-import { useHeaderHeight } from '@react-navigation/elements'
-import { View, Image, useColorScheme, Platform, } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import { useHeaderHeight } from '@react-navigation/elements';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Platform, useColorScheme, View } from "react-native";
+import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
-export default function Example() {
+export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
     const [listening, setlstening] = useState(false);
     const headerHeight = useHeaderHeight();
@@ -88,12 +88,12 @@ export default function Example() {
                 // renderComposer={renderComposer}
                 renderActions={RenderActions}
 
-                // minInputToolbarHeight={60}
-                messagesContainerStyle={{
-                    paddingBottom: insets.bottom
-                }}
+            // minInputToolbarHeight={60}
+            // messagesContainerStyle={{
+            //     paddingBottom: insets.bottom
+            // }}
             />
-            {Platform.OS === 'android' && <View style={{ height: insets.bottom }} />}
+            {Platform.OS === 'android' && <View />}
 
         </View>
     )
@@ -111,10 +111,7 @@ export const RenderSend = React.memo((props: SendProps<IMessage>) => (
             marginHorizontal: 4,
         }}
     >
-        <Image
-            style={{ width: 32, height: 32 }}
-            source={require('../../assets/images/react-logo.png')}
-        />
+        <AntDesign name="send" size={24} color="white" />
     </Send>
 ))
 

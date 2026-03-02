@@ -7,15 +7,15 @@ import { router } from "expo-router";
 export default function AllRecipePage() {
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
-    const keyboardVerticalOffset = Platform.select({
-        ios: headerHeight + insets.bottom,
-        android: headerHeight, // Android often handles it better with just the header height
-    });
-    return <SafeAreaView style={{ paddingTop: keyboardVerticalOffset }}>
+    // const keyboardVerticalOffset = Platform.select({
+    //     ios: headerHeight + insets.bottom,
+    //     android: headerHeight, // Android often handles it better with just the header height
+    // });
+    return <View>
         <Text>All Recipes</Text>
         <RecipeCard />
         {Platform.OS === 'android' && <View style={{ height: insets.bottom }} />}
-    </SafeAreaView>
+    </View>
 }
 
 interface Recipe {

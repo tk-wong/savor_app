@@ -2,7 +2,6 @@ import { Stack, useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { testUser } from "../api";
 
 export default function FunctionTestingPage() {
     const router = useRouter();
@@ -51,7 +50,7 @@ export default function FunctionTestingPage() {
 
                 <Text>Recipe page</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
+            {/* <TouchableOpacity onPress={() => {
                 // for debugging
                 testUser().then((data) => {
                     Alert.alert("User information", `data: ${JSON.stringify(data)}`);
@@ -64,7 +63,7 @@ export default function FunctionTestingPage() {
             } style={style.button}>
 
                 <Text>Recipe page</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity onPress={() => {
                 // for debugging
                 router.back()
