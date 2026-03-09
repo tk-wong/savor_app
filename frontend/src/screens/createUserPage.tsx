@@ -3,6 +3,7 @@ import { Stack, useRouter } from "expo-router";
 import { createUser } from "../api";
 import { useState } from "react";
 import { isAxiosError } from "axios";
+import {style} from "@/src/style/globalStyle";
 
 export default function CreateUserPage() {
     const router = useRouter();
@@ -76,12 +77,4 @@ export default function CreateUserPage() {
     )
 
 }
-const style = StyleSheet.create(
-    {
-        button: {
-            alignItems: 'center',
-            backgroundColor: '#DDDDDD',
-            padding: 10,
-        },
-    }
-)
+

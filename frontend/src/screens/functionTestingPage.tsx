@@ -1,7 +1,7 @@
-import { Stack, useRouter } from 'expo-router';
+import {Stack, useRouter} from 'expo-router';
 import * as Speech from 'expo-speech';
-import { Alert, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {StyleSheet, Text, TouchableOpacity} from "react-native";
+import {SafeAreaView} from "react-native-safe-area-context";
 
 export default function FunctionTestingPage() {
     const router = useRouter();
@@ -21,36 +21,38 @@ export default function FunctionTestingPage() {
                     title: "Function Testing",
                 }}
             />
-        <SafeAreaView>
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.navigate("/chatPage")
-            }
-            } style={style.button}>
-                <Text>Chat page</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={speak} style={style.button}>
-                <Text>Press to test speech</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.navigate("/allRecipePage")
-            }
+            <SafeAreaView>
+                <TouchableOpacity onPress={() => {
+                    // for debugging
+                    router.navigate("/chatPage")
+                }
+                } style={style.button}>
+                    <Text>Chat page</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                    router.navigate("/speechTestingPage")
+                }} style={style.button}>
+                    <Text>speech to text and text to speech testing</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                    // for debugging
+                    router.navigate("/allRecipePage")
+                }
 
-            } style={style.button}>
+                } style={style.button}>
 
-                <Text>All recipes page</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.navigate("/recipePage")
-            }
+                    <Text>All recipes page</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                    // for debugging
+                    router.navigate("/recipePage")
+                }
 
-            } style={style.button}>
+                } style={style.button}>
 
-                <Text>Recipe page</Text>
-            </TouchableOpacity>
-            {/* <TouchableOpacity onPress={() => {
+                    <Text>Recipe page</Text>
+                </TouchableOpacity>
+                {/* <TouchableOpacity onPress={() => {
                 // for debugging
                 testUser().then((data) => {
                     Alert.alert("User information", `data: ${JSON.stringify(data)}`);
@@ -64,16 +66,16 @@ export default function FunctionTestingPage() {
 
                 <Text>Recipe page</Text>
             </TouchableOpacity> */}
-            <TouchableOpacity onPress={() => {
-                // for debugging
-                router.back()
-            }
+                <TouchableOpacity onPress={() => {
+                    // for debugging
+                    router.back()
+                }
 
-            } style={style.button}>
+                } style={style.button}>
 
-                <Text>Back to Login page</Text>
-            </TouchableOpacity>
-        </SafeAreaView>
+                    <Text>Back to Login page</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
         </>
     );
 }
