@@ -4,10 +4,9 @@ import * as Speech from "expo-speech";
 import {style} from "@/src/style/globalStyle";
 import React, {useState} from "react";
 import {Feather} from "@expo/vector-icons";
-import {listen} from "node:quic";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 
-export default function SpeechTestingPage(){
+export default function SpeechTestingPage() {
     const speak = () => {
         const thingToSay = 'testing 123';
         Speech.speak(thingToSay,
@@ -25,7 +24,13 @@ export default function SpeechTestingPage(){
     const [transcript, setTranscript] = useState("");
 
     useSpeechRecognitionEvent("start", () => setRecognizing(true));
-    useSpeechRecognitionEvent("end", () => setRecognizing(false));
+    useSpeechRecognitionEvent("end", () => {
+        setRecognizing(false);
+        setTimeout(() => Speech.speak(transcript, {
+            language: "en-US",
+            rate: 0.8,
+        }), 2000);
+    });
     useSpeechRecognitionEvent("result", (event) => {
         setTranscript(event.results[0]?.transcript);
     });
@@ -48,9 +53,9 @@ export default function SpeechTestingPage(){
 
     return (
         <SafeAreaView>
-    <TouchableOpacity onPress={speak} style={style.button}>
-        <Text>Press to test speech</Text>
-    </TouchableOpacity>
+            <TouchableOpacity onPress={speak} style={style.button}>
+                <Text>Press to test speech</Text>
+            </TouchableOpacity>
             {!recognizing ? (
                 <TouchableOpacity onPress={handleStart} style={style.button}>
                     <Text>Start</Text>
@@ -67,9 +72,9 @@ export default function SpeechTestingPage(){
                 >
                     <Text>Stop</Text>
                     <Feather
-                        name={'mic' }
+                        name={'mic'}
                         size={24}
-                        color={'#ff4444' }
+                        color={'#ff4444'}
                     />
                 </TouchableOpacity>
             )}

@@ -1,4 +1,4 @@
-import {Stack, useRouter} from 'expo-router';
+import {router, Stack, useRouter} from 'expo-router';
 import * as Speech from 'expo-speech';
 import {StyleSheet, Text, TouchableOpacity} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -45,7 +45,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                     // for debugging
-                    router.navigate("/recipePage")
+                    router.push({ pathname: `/recipePage`, params: { id: 1 } })
                 }
 
                 } style={style.button}>
