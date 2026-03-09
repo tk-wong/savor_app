@@ -1,7 +1,8 @@
 import {router, Stack, useRouter} from 'expo-router';
 import * as Speech from 'expo-speech';
-import {StyleSheet, Text, TouchableOpacity} from "react-native";
+import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
+import "../../global.css";
 
 export default function FunctionTestingPage() {
     const router = useRouter();
@@ -21,7 +22,7 @@ export default function FunctionTestingPage() {
                     title: "Function Testing",
                 }}
             />
-            <SafeAreaView>
+            <SafeAreaView className="flex gap-4 mx-auto">
                 <TouchableOpacity onPress={() => {
                     // for debugging
                     router.navigate("/chatPage")
@@ -75,6 +76,10 @@ export default function FunctionTestingPage() {
 
                     <Text>Back to Login page</Text>
                 </TouchableOpacity>
+                    <Text className="text-xl font-bold text-blue-500">
+                        Welcome to Nativewind!
+                    </Text>
+
             </SafeAreaView>
         </>
     );
