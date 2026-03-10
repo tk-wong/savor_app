@@ -1,6 +1,6 @@
 import {router, Stack, useRouter} from 'expo-router';
 import * as Speech from 'expo-speech';
-import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Button, Pressable, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import "../../global.css";
 
@@ -44,7 +44,7 @@ export default function FunctionTestingPage() {
 
                     <Text>All recipes page</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
+                <Pressable onPress={() => {
                     // for debugging
                     router.push({ pathname: `/recipePage`, params: { id: 1 } })
                 }
@@ -52,7 +52,7 @@ export default function FunctionTestingPage() {
                 } style={style.button}>
 
                     <Text>Recipe page</Text>
-                </TouchableOpacity>
+                </Pressable>
                 {/* <TouchableOpacity onPress={() => {
                 // for debugging
                 testUser().then((data) => {
@@ -79,7 +79,7 @@ export default function FunctionTestingPage() {
                     <Text className="text-xl font-bold text-blue-500">
                         Welcome to Nativewind!
                     </Text>
-
+            <Button title={"testing 123"} onPress={speak} />
             </SafeAreaView>
         </>
     );

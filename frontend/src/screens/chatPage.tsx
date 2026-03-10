@@ -1,12 +1,13 @@
-import { Feather } from "@expo/vector-icons";
+import {Feather} from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { useHeaderHeight } from '@react-navigation/elements';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, useColorScheme, View } from "react-native";
-import { Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps } from 'react-native-gifted-chat';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getNewChatGroup, sendMessage } from "../api/chat";
-import { ApiRequestError } from "../api/apiRequestError";
+import {useHeaderHeight} from '@react-navigation/elements';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Alert, Platform, useColorScheme, View} from "react-native";
+import {Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps} from 'react-native-gifted-chat';
+import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {getNewChatGroup, sendMessage} from "../api/chat";
+import {ApiRequestError} from "../api/apiRequestError";
+import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
@@ -27,12 +28,33 @@ export default function ChatPage() {
                 createdAt: new Date(),
                 user: {
                     _id: 2,
-                    name: 'John Doe',
-                    avatar: 'https://placeimg.com/140/140/any',
+                    // name: 'John Doe',
+                    // avatar: 'https://placeimg.com/140/140/any',
                 },
             },
         ])
     }, [])
+
+    useSpeechRecognitionEvent("end", () => {
+        setlstening(false);
+    });
+    useSpeechRecognitionEvent("result", (event) => {
+        const transcript = event.results[0]?.transcript;
+        console.log(transcript);
+        if (transcript) {
+            const newMessage: IMessage = {
+                _id: Math.random(),
+                text: transcript,
+                createdAt: new Date(),
+                user: {
+                    _id: 1,
+                    name: 'User',
+                },
+            }
+            onSend([newMessage]);
+        }
+    });
+
 
     const onSend = useCallback((newMessages: IMessage[] = []) => {
         const outgoingMessage = newMessages[0];
@@ -53,21 +75,47 @@ export default function ChatPage() {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [sanitizedMessage]),
                 )
+                if (!response || !response.prompt_type) {
+                    console.warn("Invalid response from backend:", response);
+                    Alert.alert("Error", "Received invalid response from server. Please try again.");
+                    return;
+                }
+                if (response.prompt_type === "question") {
+                    const message_text = response.answer;
+                } else if (response.prompt_type === "recipe") {
+
+                    const recipe = response.recipe;
+                    const recipe_title = recipe.name;
+                    const recipe_description = recipe.description;
+                    const recipe_ingredients = recipe.ingredients.join("\n");
+                    const recipe_instructions = recipe.instructions.join("\n");
+                    const recipe_tips = recipe.tips.join("\n");
+                    const messageText = `Here's a recipe for you:\n\n
+                    Title: ${recipe_title}\n\n
+                    Description:\n${recipe_description}\n\n
+                    Ingredients:\n${recipe_ingredients}\n\n
+                    Instructions:\n${recipe_instructions}\n\n
+                    Tips:\n${recipe_tips}`;
+                }else {
+                    Alert.alert("Unknown response type", `Received unknown prompt type from server`);
+                    console.warn("Unknown prompt type in response:", response);
+                    return;
+                }
+
 
                 const botMessage: IMessage = {
                     _id: Math.random(),
-                    text: response.prompt_type,
+                    text: messageText,
                     createdAt: new Date(),
                     user: {
-                        _id: 2,
+                        _id: "bot",
                         name: 'SavorBot',
-                        avatar: 'https://placeimg.com/140/140/any',
                     },
                 }
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
                 )
-            }).catch((error:ApiRequestError) => {
+            }).catch((error: ApiRequestError) => {
                 console.error("Error sending message:", error.message);
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
 
@@ -79,7 +127,7 @@ export default function ChatPage() {
                 console.log("New chat group created with ID:", response.group_id);
                 setChatGroupId(response.group_id);
                 sendToBackend(response.group_id);
-            }).catch((error:ApiRequestError) => {
+            }).catch((error: ApiRequestError) => {
                 console.error("Error creating new chat group:", error.message);
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while creating chat group.");
             })
@@ -108,7 +156,28 @@ export default function ChatPage() {
                         name={listening ? 'mic' : 'mic-off'}
                         size={24}
                         color={listening ? '#ff4444' : '#666'}
-                        onPress={() => setlstening(!listening)}
+                        onPress={() => {
+                            setlstening(!listening);
+                            ExpoSpeechRecognitionModule.requestPermissionsAsync().then((result) => {
+                                if (!result.granted) {
+                                    console.warn("Permissions not granted", result);
+                                    return;
+                                }
+                                if (!listening) {
+                                    ExpoSpeechRecognitionModule.start({
+                                        lang: "en-US",
+                                        interimResults: true,
+                                        continuous: false,
+                                    });
+                                } else {
+                                    ExpoSpeechRecognitionModule.stop();
+                                }
+                            }).catch((error) => {
+                                console.error("Error requesting permissions or starting/stopping speech recognition:", error);
+                            })
+                        }
+
+                        }
                     />
                 )}
                 options={{
@@ -125,7 +194,7 @@ export default function ChatPage() {
     })
     return (
 
-        <View style={{ flex: 1 }}>
+        <View style={{flex: 1}}>
             <GiftedChat
                 messages={messages}
                 onSend={messages => {
@@ -134,17 +203,18 @@ export default function ChatPage() {
                 user={{
                     _id: 1,
                 }}
-                keyboardAvoidingViewProps={{ keyboardVerticalOffset: keyboardVerticalOffset }}
+                keyboardAvoidingViewProps={{keyboardVerticalOffset: keyboardVerticalOffset}}
                 renderSend={RenderSend}
                 // renderComposer={renderComposer}
                 renderActions={RenderActions}
 
-            // minInputToolbarHeight={60}
-            // messagesContainerStyle={{
-            //     paddingBottom: insets.bottom
-            // }}
+                // minInputToolbarHeight={60}
+                // messagesContainerStyle={{
+                //     paddingBottom: insets.bottom
+                // }}
+                renderAvatar={null}
             />
-            {Platform.OS === 'android' && <View />}
+            {Platform.OS === 'android' && <View/>}
 
         </View>
     )
@@ -162,10 +232,9 @@ export const RenderSend = React.memo((props: SendProps<IMessage>) => (
             marginHorizontal: 4,
         }}
     >
-        <AntDesign name="send" size={24} color="white" />
+        <AntDesign name="send" size={24} color="white"/>
     </Send>
 ))
 
-// TODO: implement voice interaction using react-native-voice or any other library, and connect it with the chat interface to allow users to send messages using their voice.
 // TODO: fetch chat history from backend and display it in the chat interface, and also send new messages to the backend to store them in the database.
-// TODO: send the user's message to the backend and get a response from the chatbot, and display the chatbot's response in the chat interface.
+// TODO: display the chatbot's response in the chat interface.
