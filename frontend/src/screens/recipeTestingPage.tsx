@@ -5,6 +5,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {DetailRecipe} from "../types";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
+import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 // interface SampleDetailRecipe {
 //     id: number;
 //     name: string;
@@ -60,6 +61,7 @@ export default function RecipePage() {
     const [recipe, setRecipe] = useState<DetailRecipe>(recipe_sample);
     const [stepIndex, setStepIndex] = useState(0);
     const [listening, setListening] = useState(false);
+    const [voiceTranscript, setVoiceTranscript] = useState("");
     // const [recipe, setRecipe] = useState<DetailRecipe>(defaultRecipe);
 
     // const fetchRecipeDetails = useCallback(() => {
@@ -93,6 +95,38 @@ export default function RecipePage() {
             speak((recipe.instructions[stepIndex])).then()
         }
     };
+    useSpeechRecognitionEvent("end", () => {
+        if (listening) {
+            console.log("Restarting voice interaction after speech ended");
+            setTimeout(() => startVoiceInteraction(), 100);
+        }
+    })
+    useSpeechRecognitionEvent("result", (event) => {
+        const transcript = event.results[0]?.transcript.toLowerCase();
+        setVoiceTranscript(transcript)
+        console.log("Recognized speech:", transcript);
+    })
+    const startVoiceInteraction = () => {
+        console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
+        ExpoSpeechRecognitionModule.getPermissionsAsync().then(
+            () =>   {
+                ExpoSpeechRecognitionModule.start({
+                    lang: "en-US",
+                    interimResults: true,
+                    continuous: false,
+                    // androidIntentOptions: {
+                    //
+                    // }
+                    androidIntentOptions: {
+                        EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
+                        EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
+                    },
+                })
+            }
+        ).catch((error) => {
+            console.error(error);
+        });
+    }
     return (
         <SafeAreaView>
             <ScrollView>
@@ -117,10 +151,19 @@ export default function RecipePage() {
                 ))}
                 <TouchableOpacity onPress={() => {
                     console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
-                }}
-                                  style={{backgroundColor: "blue", padding: 10, margin: 10, borderRadius: 5}}>
-                    <Text style={{color: "white"}}>Voice Interaction</Text>
+                    const previousState = listening;
+                    setListening(!listening);
+                    if (!previousState) {
+                        startVoiceInteraction();
+                    } else {
+                        setListening(false);
+                        ExpoSpeechRecognitionModule.stop();
+                    }
+                }} style={{backgroundColor: "blue", padding: 10, margin: 10, borderRadius: 5}}>
+                    <Text
+                        style={{color: "white"}}>{listening ? "stop voice interaction " : "start voice interaction"}</Text>
                 </TouchableOpacity>
+                <Text>{`Voice Transcript: ${voiceTranscript}`}</Text>
                 <View style={{flexDirection: "row"}}>
                     <TouchableOpacity onPress={() => {
                         if (stepIndex + 1 <= recipe.instructions.length - 1) {
@@ -128,7 +171,6 @@ export default function RecipePage() {
                             setStepIndex(nextIndex);
                             speakStep(nextIndex);
                         }
-
                     }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
                         <AntDesign name="plus" size={24} color="black"/>
                     </TouchableOpacity>
