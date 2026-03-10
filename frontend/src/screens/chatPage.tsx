@@ -3,11 +3,22 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import {useHeaderHeight} from '@react-navigation/elements';
 import React, {useCallback, useEffect, useState} from 'react';
 import {Alert, Platform, useColorScheme, View} from "react-native";
-import {Actions, ActionsProps, GiftedChat, IMessage, Send, SendProps} from 'react-native-gifted-chat';
+import {
+    Actions,
+    ActionsProps,
+    GiftedChat,
+    IMessage,
+    MessageText,
+    MessageTextProps,
+    Send,
+    SendProps
+} from 'react-native-gifted-chat';
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {getNewChatGroup, sendMessage} from "../api/chat";
 import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
+import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
+import Markdown from "react-native-markdown-display";
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
@@ -24,7 +35,7 @@ export default function ChatPage() {
         setMessages([
             {
                 _id: 1,
-                text: 'Hello developer',
+                text: 'Hello **developer**',
                 createdAt: new Date(),
                 user: {
                     _id: 2,
@@ -96,7 +107,7 @@ export default function ChatPage() {
                     Ingredients:\n${recipe_ingredients}\n\n
                     Instructions:\n${recipe_instructions}\n\n
                     Tips:\n${recipe_tips}`;
-                }else {
+                } else {
                     Alert.alert("Unknown response type", `Received unknown prompt type from server`);
                     console.warn("Unknown prompt type in response:", response);
                     return;
@@ -135,10 +146,41 @@ export default function ChatPage() {
             sendToBackend(chatGroupId);
         }
     }, [chatGroupId])
-    const RenderActions = React.memo((props: ActionsProps) => {
+    const renderActions = React.memo((props: ActionsProps) => {
         const colorScheme = useColorScheme()
         const isDark = colorScheme === 'dark'
 
+        const loadIcon = () => {
+            const toggleVoiceRecognition = () => {
+                setlstening(!listening);
+                const handleVoiceRecognition = (result: ExpoSpeechRecognitionPermissionResponse) => {
+                    if (!result.granted) {
+                        console.warn("Permissions not granted", result);
+                        return;
+                    }
+                    if (!listening) {
+                        ExpoSpeechRecognitionModule.start({
+                            lang: "en-US",
+                            interimResults: true,
+                            continuous: false,
+                        });
+                    } else {
+                        ExpoSpeechRecognitionModule.stop();
+                    }
+                };
+                ExpoSpeechRecognitionModule.requestPermissionsAsync().then(handleVoiceRecognition).catch((error) => {
+                    console.error("Error requesting permissions or starting/stopping speech recognition:", error);
+                })
+            };
+            return (
+                <Feather
+                    name={listening ? 'mic' : 'mic-off'}
+                    size={24}
+                    color={listening ? '#ff4444' : '#666'}
+                    onPress={toggleVoiceRecognition}
+                />
+            );
+        };
         return (
             <Actions
                 {...props as any}
@@ -151,47 +193,27 @@ export default function ChatPage() {
                     marginRight: 4,
                     marginBottom: 0,
                 }}
-                icon={() => (
-                    <Feather
-                        name={listening ? 'mic' : 'mic-off'}
-                        size={24}
-                        color={listening ? '#ff4444' : '#666'}
-                        onPress={() => {
-                            setlstening(!listening);
-                            ExpoSpeechRecognitionModule.requestPermissionsAsync().then((result) => {
-                                if (!result.granted) {
-                                    console.warn("Permissions not granted", result);
-                                    return;
-                                }
-                                if (!listening) {
-                                    ExpoSpeechRecognitionModule.start({
-                                        lang: "en-US",
-                                        interimResults: true,
-                                        continuous: false,
-                                    });
-                                } else {
-                                    ExpoSpeechRecognitionModule.stop();
-                                }
-                            }).catch((error) => {
-                                console.error("Error requesting permissions or starting/stopping speech recognition:", error);
-                            })
-                        }
-
-                        }
-                    />
-                )}
-                options={{
-                    'Choose From Library': () => {
-                        console.log('Choose From Library')
-                    },
-                    Cancel: () => {
-                        console.log('Cancel')
-                    },
-                }}
-                optionTintColor={isDark ? '#ffffff' : '#222B45'}
+                icon={loadIcon}
+                // options={{
+                //     'Choose From Library': () => {
+                //         console.log('Choose From Library')
+                //     },
+                //     Cancel: () => {
+                //         console.log('Cancel')
+                //     },
+                // }}
+                // optionTintColor={isDark ? '#ffffff' : '#222B45'}
             />
         )
     })
+    const renderMessageText = (props: MessageTextProps<IMessage>) => {
+        if(props.currentMessage ) {
+            return <Markdown >
+                {props.currentMessage.text}
+            </Markdown>
+        }
+        return null
+    }
     return (
 
         <View style={{flex: 1}}>
@@ -204,15 +226,16 @@ export default function ChatPage() {
                     _id: 1,
                 }}
                 keyboardAvoidingViewProps={{keyboardVerticalOffset: keyboardVerticalOffset}}
-                renderSend={RenderSend}
+                renderSend={renderSend}
                 // renderComposer={renderComposer}
-                renderActions={RenderActions}
+                renderActions={renderActions}
 
                 // minInputToolbarHeight={60}
                 // messagesContainerStyle={{
                 //     paddingBottom: insets.bottom
                 // }}
                 renderAvatar={null}
+                renderMessageText={renderMessageText}
             />
             {Platform.OS === 'android' && <View/>}
 
@@ -220,7 +243,7 @@ export default function ChatPage() {
     )
 }
 
-export const RenderSend = React.memo((props: SendProps<IMessage>) => (
+export const renderSend = React.memo((props: SendProps<IMessage>) => (
     <Send
         {...props}
         // isDisabled={!(props.text)}
