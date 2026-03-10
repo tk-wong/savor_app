@@ -8,7 +8,7 @@ import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speec
 
 export default function SpeechTestingPage() {
     const speak = () => {
-        const thingToSay = 'testing 123';
+        const thingToSay = 'testing ***** 123';
         Speech.speak(thingToSay,
             {
                 language: "en-US",

@@ -1,9 +1,10 @@
-import {router, Stack, useRouter} from 'expo-router';
+import {Stack, useRouter} from 'expo-router';
 import * as Speech from 'expo-speech';
-import {Button, Pressable, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Button, Pressable, StyleSheet, Text, TouchableOpacity} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import "../../global.css";
-
+// import styles = module;
+import {useTextToSpeech} from "../hooks/useTextToSpeech"
 export default function FunctionTestingPage() {
     const router = useRouter();
     const speak = () => {
@@ -14,6 +15,7 @@ export default function FunctionTestingPage() {
                 rate: 0.8,
             });
     };
+
     return (
         <>
             <Stack.Screen
@@ -46,7 +48,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <Pressable onPress={() => {
                     // for debugging
-                    router.push({ pathname: `/recipePage`, params: { id: 1 } })
+                    router.push({pathname: `/recipePage`, params: {id: 1}})
                 }
 
                 } style={style.button}>
@@ -76,10 +78,13 @@ export default function FunctionTestingPage() {
 
                     <Text>Back to Login page</Text>
                 </TouchableOpacity>
-                    <Text className="text-xl font-bold text-blue-500">
-                        Welcome to Nativewind!
-                    </Text>
-            <Button title={"testing 123"} onPress={speak} />
+                <Text className="text-xl font-bold text-blue-500">
+                    Welcome to Nativewind!
+                </Text>
+                <Button title={"testing 123"} onPress={speak}/>
+                <TouchableOpacity style={style.button} onPress={() => router.navigate("/recipeTestingPage")}>
+                    <Text>Recipe TTS and STT testing</Text>
+                </TouchableOpacity>
             </SafeAreaView>
         </>
     );
