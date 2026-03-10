@@ -19,6 +19,7 @@ import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
+import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
@@ -46,9 +47,9 @@ export default function ChatPage() {
         ])
     }, [])
 
-    useSpeechRecognitionEvent("end", () => {
-        setlstening(false);
-    });
+    // useSpeechRecognitionEvent("end", () => {
+    //     setlstening(false);
+    // });
     useSpeechRecognitionEvent("result", (event) => {
         const transcript = event.results[0]?.transcript;
         console.log(transcript);
@@ -66,7 +67,7 @@ export default function ChatPage() {
         }
     });
 
-
+    const {speak, isSpeaking, stopSpeaking} = useTextToSpeech();
     const onSend = useCallback((newMessages: IMessage[] = []) => {
         const outgoingMessage = newMessages[0];
         const messageText = typeof outgoingMessage?.text === "string" ? outgoingMessage.text.trim() : "";
@@ -126,6 +127,12 @@ export default function ChatPage() {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
                 )
+                if(listening){
+                    ExpoSpeechRecognitionModule.stop();
+                    setlstening(false);
+                    const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
+                    speak(cleanedText).then();
+                }
             }).catch((error: ApiRequestError) => {
                 console.error("Error sending message:", error.message);
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
