@@ -84,7 +84,7 @@ export default function RecipePage() {
     //     });
     // }, []);
     // useFocusEffect(fetchRecipeDetails);
-    const {speak, isSpeaking} = useTextToSpeech();
+    const {speak, isSpeaking, stopSpeaking} = useTextToSpeech();
     const speakStep = (stepIndex: number) => {
         console.log("Speaking step:", stepIndex);
         if (stepIndex >= 0 && stepIndex < recipe.instructions.length) {
@@ -143,7 +143,7 @@ export default function RecipePage() {
                 ))}
                 <Text>Instructions:</Text>
                 {recipe.instructions.map((instruction, index) => (
-                    <Text key={index}>{`${index + 1}. ${instruction}`}</Text>
+                    <Text key={index} style={{color: stepIndex==index ? 'red':'black'}}>{`${index + 1}. ${instruction}`}</Text>
                 ))}
                 <Text>Tips:</Text>
                 {recipe.tips.map((tip, index) => (
@@ -193,6 +193,9 @@ export default function RecipePage() {
                         setStepIndex(0);
                     }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
                         <Text>Reset</Text>
+                    </TouchableOpacity >
+                    <TouchableOpacity onPress={stopSpeaking} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
+                        <Text>Stop</Text>
                     </TouchableOpacity>
                 </View>
                 <TouchableOpacity onPress={() => {

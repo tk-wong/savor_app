@@ -24,5 +24,11 @@ export const useTextToSpeech = () => {
             }
         })
     }, [isSpeaking])
-    return {speak, isSpeaking};
+    const stopSpeak = useCallback(async () => {
+        if (isSpeaking) {
+            await Speech.stop();
+            setIsSpeaking(false);
+        }
+    },[])
+    return {speak, isSpeaking, stopSpeaking: stopSpeak};
 }
