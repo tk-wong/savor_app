@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 
@@ -26,7 +27,7 @@ def chat():
         return {"message": "Chat group not found"}, 404
     try:
         model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt}, timeout=60)
-    except (requests.exceptions.Timeout , requests.exceptions.ConnectionError):
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         return {"message": "Model response timed out"}, 504
     if model_response.status_code != 200:
         return {"message": "Error generating response"}, 500
@@ -52,14 +53,16 @@ def chat():
         if not recipe_data:
             return {"message": "Response missing recipe data"}, 500
         recipe_title = recipe_data.get("title")
-        new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"), direction="\n\n".join(recipe_data.get("direction", [])),
+        new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
+                            direction="\n\n".join(recipe_data.get("direction", [])),
                             create_user_id=int(get_jwt_identity()), image_url="")
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
         try:
-            image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},timeout=60)
-        except (requests.exceptions.Timeout , requests.exceptions.ConnectionError):
+            image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},
+                                           timeout=60)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             return {"message": "Image generation timed out"}, 504
         if image_response.status_code != 200:
             return {"message": "Error generating image from the image generation model"}, 500
@@ -90,7 +93,22 @@ def create_new_group():
     return {"message": "New chat group created", "group_id": new_group.id}, 200
 
 
-@chat_blueprint.route('/group/<int:group_id>/history', methods=['GET'])
+@chat_blueprint.route('/group/all', methods=['GET'])
+@jwt_required()
+def get_all_groups():
+    user_id = int(get_jwt_identity())
+    chat_groups = ChatGroupModel.query.filter_by(create_user_id=user_id).all()
+    last_chat_histories: dict[int, datetime.datetime] = {
+        group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
+            ChatHistoryModel.timestamp.desc()).first().timestamp for group in chat_groups}
+    groups_data = [{"id": group.id, "name": group.name,
+                    "last_edit": last_chat_histories.get(group.id).isoformat() if last_chat_histories.get(
+                        group.id) is not None else None} for
+                   group in chat_groups]
+    return {"chat_groups": groups_data}, 200
+
+
+@chat_blueprint.route('/group/<int:group_id>', methods=['GET'])
 @jwt_required()
 def get_chat_history(group_id):
     user_id = int(get_jwt_identity())

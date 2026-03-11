@@ -1,7 +1,8 @@
+from datetime import datetime
+
 from sqlalchemy.dialects.postgresql import JSONB
 
 from backend.db_manager import db
-from backend.models.chat_group_model import ChatGroupModel
 
 
 class ChatHistoryModel(db.Model):
@@ -11,7 +12,7 @@ class ChatHistoryModel(db.Model):
     message: db.Column = db.Column(JSONB, nullable=False)
     chat_group_id: db.Column = db.Column(db.Integer, db.ForeignKey('chat_groups.id'), nullable=False)
     image_url: db.Column = db.Column(db.String(255), nullable=True)
-    timestamp: db.Column = db.Column(db.DateTime, nullable=False)
+    timestamp: db.Column = db.Column(db.DateTime, nullable=False, default=datetime.now)
     chat_group = db.relationship("ChatGroupModel",
         back_populates="chat_histories")
 
