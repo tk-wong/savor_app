@@ -267,4 +267,3 @@ export const renderSend = React.memo((props: SendProps<IMessage>) => (
 ))
 
 // TODO: fetch chat history from backend and display it in the chat interface, and also send new messages to the backend to store them in the database.
-// TODO: display the chatbot's response in the chat interface.

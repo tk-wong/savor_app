@@ -5,7 +5,7 @@ import { Alert } from 'react-native';
 
 const apiClient = axios.create({
   baseURL: "http://192.168.0.155:5000/api",
-  timeout: 120000, // 120 seconds, 2 minutes
+  timeout: 60000, // 60 seconds timeout
   headers: { "Content-Type": "application/json" },
 });
 

@@ -1,4 +1,4 @@
-import {router, useLocalSearchParams} from "expo-router";
+import {router, Stack, useLocalSearchParams} from "expo-router";
 import {useState} from "react";
 import {Image, ScrollView, Text, TouchableOpacity, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -128,6 +128,23 @@ export default function RecipePage() {
         });
     }
     return (
+        <>
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    title: "Recipe Details",
+                    headerLeft : () =>{
+                        return <TouchableOpacity onPress={() => {
+                            console.log("Back to all recipes");
+                            router.back();
+                        }} style={{padding: 10}}>
+                            <AntDesign name="arrow-up" size={24} color="black" />
+                        </TouchableOpacity>
+                    }
+                }
+
+            }
+            />
         <SafeAreaView>
             <ScrollView>
                 <Text>{recipe.name}</Text>
@@ -205,5 +222,6 @@ export default function RecipePage() {
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
+        </>
     )
 }

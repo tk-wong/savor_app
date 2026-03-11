@@ -32,6 +32,9 @@ export default function FunctionTestingPage() {
                 } style={style.button}>
                     <Text>Chat page</Text>
                 </TouchableOpacity>
+                <TouchableOpacity onPress={()=>router.navigate("/chatHistoryPage")} style={style.button}>
+                    <Text>Chat history page</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                     router.navigate("/speechTestingPage")
                 }} style={style.button}>

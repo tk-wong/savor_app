@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import { ChatResponse } from "../types/response";
+import {AllChatGroupResponse, ChatResponse} from "../types/response";
 import { CreateChatGroupResponse } from "../types/response/CreateChatGroupResponse";
 import { mapApiError } from "./apiRequestError";
 
@@ -21,6 +21,15 @@ export const getNewChatGroup = async (): Promise<CreateChatGroupResponse> => {
     try {
         const response = await apiClient.get("/chat/group/new");
         return response.data; // Assuming the response contains the new chat group ID
+    } catch (error) {
+        throw mapApiError(error);
+    }
+}
+
+export const getAllChatGroups = async (): Promise<AllChatGroupResponse> => {
+    try {
+        const response = await apiClient.get("/chat/group/all");
+        return response.data; // Assuming the response contains the list of chat groups
     } catch (error) {
         throw mapApiError(error);
     }

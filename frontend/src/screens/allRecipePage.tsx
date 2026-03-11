@@ -28,7 +28,6 @@ interface RecipeCardItem {
 
 function RecipeCard() {
     const [recipeList, setRecipeList] = useState<RecipeCardItem[]>([]);
-    // TODO: fetch recipe list from backend and display it in a card format
 
     useFocusEffect(useCallback(() => {
         console.log("Fetching all recipes");
