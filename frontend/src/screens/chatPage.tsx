@@ -20,6 +20,8 @@ import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speec
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
+import {Stack} from "expo-router";
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([])
@@ -222,7 +224,21 @@ export default function ChatPage() {
         return null
     }
     return (
-
+        <>
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    title: "Chat with SavorBot",
+                    headerRight :() => {
+                        return (
+                            <View style={{flexDirection: "row"}}>
+                                <AntDesign name={"history"} size={24}/>
+                                <MaterialDesignIcons name={"chat-plus-outline"} size={24}/>
+                            </View>
+                        )
+                    }
+                }}
+            />
         <View style={{flex: 1}}>
             <GiftedChat
                 messages={messages}
@@ -247,6 +263,7 @@ export default function ChatPage() {
             {Platform.OS === 'android' && <View/>}
 
         </View>
+        </>
     )
 }
 

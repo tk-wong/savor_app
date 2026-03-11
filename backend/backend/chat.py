@@ -102,9 +102,9 @@ def get_all_groups():
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
             ChatHistoryModel.timestamp.desc()).first().timestamp for group in chat_groups}
     groups_data = [{"id": group.id, "name": group.name,
-                    "last_edit": last_chat_histories.get(group.id).isoformat() if last_chat_histories.get(
-                        group.id) is not None else None} for
-                   group in chat_groups]
+                    "last_edit": last_chat_histories.get(group.id).isoformat() } for
+                   group in chat_groups if last_chat_histories.get(
+                        group.id) is not None] # avoid returning groups without any chat history
     return {"chat_groups": groups_data}, 200
 
 

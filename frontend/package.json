@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
+    "@react-native-vector-icons/material-design-icons": "^12.4.2",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
-    "@testing-library/jest-native": "19.1.0",
     "axios": "^1.13.6",
     "babel-preset-expo": "^55.0.10",
     "date-fns": "^4.1.0",
@@ -59,7 +59,6 @@
     "@babel/preset-typescript": "^7.28.5",
     "@react-native-community/cli": "latest",
     "@react-native/metro-config": "^0.83.1",
-    "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/invariant": "^2.2.37",
     "@types/jest": "29.5.14",
@@ -74,7 +73,7 @@
     "metro-react-native-babel-preset": "^0.77.0",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "react-refresh": "^0.18.0",
-    "react-test-renderer": "^19.1.0",
+    "react-test-renderer": "19.1.0",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.6",
     "typescript": "~5.9.2"
@@ -82,7 +81,7 @@
   "private": true,
   "overrides": {
     "react-native-markdown-display": {
-      "markdown-it": "14.1.0"
+      "markdown-it": "14.1.1"
     }
   }
 }
