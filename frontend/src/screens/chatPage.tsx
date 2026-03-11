@@ -1,18 +1,9 @@
 import {Feather} from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useHeaderHeight} from '@react-navigation/elements';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {Dispatch, SetStateAction, useCallback, useEffect, useState} from 'react';
 import {Alert, Platform, useColorScheme, View} from "react-native";
-import {
-    Actions,
-    ActionsProps,
-    GiftedChat,
-    IMessage,
-    MessageText,
-    MessageTextProps,
-    Send,
-    SendProps
-} from 'react-native-gifted-chat';
+import {Actions, ActionsProps, GiftedChat, IMessage, MessageTextProps, Send, SendProps} from 'react-native-gifted-chat';
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {getNewChatGroup, sendMessage} from "../api/chat";
 import {ApiRequestError} from "../api/apiRequestError";
@@ -20,11 +11,26 @@ import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speec
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {Stack} from "expo-router";
-import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import {Stack, useRouter} from "expo-router";
+import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
+
+function HeaderRightButton({clearChat}: {clearChat: () => void}) {
+    const router = useRouter()
+    return (
+        <View style={{flexDirection: "row"}}>
+            <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}/>
+            <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}/>
+        </View>
+    );
+}
+//
+// const useMessage = (): [IMessage[], Dispatch<SetStateAction<IMessage[]>>]  => {
+//     const [messages, setMessages] = useState<IMessage[]>([]);
+//     return [messages, setMessages];
+// }
 
 export default function ChatPage() {
-    const [messages, setMessages] = useState<IMessage[]>([])
+    const [messages, setMessages] = useState<IMessage[]>([]);
     const [listening, setlstening] = useState(false);
     const [chatGroupId, setChatGroupId] = useState<number | null>(null);
     const headerHeight = useHeaderHeight();
@@ -129,7 +135,7 @@ export default function ChatPage() {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
                 )
-                if(listening){
+                if (listening) {
                     ExpoSpeechRecognitionModule.stop();
                     setlstening(false);
                     const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
@@ -216,8 +222,8 @@ export default function ChatPage() {
         )
     })
     const renderMessageText = (props: MessageTextProps<IMessage>) => {
-        if(props.currentMessage ) {
-            return <Markdown >
+        if (props.currentMessage) {
+            return <Markdown>
                 {props.currentMessage.text}
             </Markdown>
         }
@@ -229,40 +235,34 @@ export default function ChatPage() {
                 options={{
                     headerShown: true,
                     title: "Chat with SavorBot",
-                    headerRight :() => {
-                        return (
-                            <View style={{flexDirection: "row"}}>
-                                <AntDesign name={"history"} size={24}/>
-                                <MaterialDesignIcons name={"chat-plus-outline"} size={24}/>
-                            </View>
-                        )
-                    }
+                    headerRight: () => <HeaderRightButton clearChat={() => setMessages([])}/>
+
                 }}
             />
-        <View style={{flex: 1}}>
-            <GiftedChat
-                messages={messages}
-                onSend={messages => {
-                    onSend(messages);
-                }}
-                user={{
-                    _id: 1,
-                }}
-                keyboardAvoidingViewProps={{keyboardVerticalOffset: keyboardVerticalOffset}}
-                renderSend={renderSend}
-                // renderComposer={renderComposer}
-                renderActions={renderActions}
+            <View style={{flex: 1}}>
+                <GiftedChat
+                    messages={messages}
+                    onSend={messages => {
+                        onSend(messages);
+                    }}
+                    user={{
+                        _id: 1,
+                    }}
+                    keyboardAvoidingViewProps={{keyboardVerticalOffset: keyboardVerticalOffset}}
+                    renderSend={renderSend}
+                    // renderComposer={renderComposer}
+                    renderActions={renderActions}
 
-                // minInputToolbarHeight={60}
-                // messagesContainerStyle={{
-                //     paddingBottom: insets.bottom
-                // }}
-                renderAvatar={null}
-                renderMessageText={renderMessageText}
-            />
-            {Platform.OS === 'android' && <View/>}
+                    // minInputToolbarHeight={60}
+                    // messagesContainerStyle={{
+                    //     paddingBottom: insets.bottom
+                    // }}
+                    renderAvatar={null}
+                    renderMessageText={renderMessageText}
+                />
+                {Platform.OS === 'android' && <View/>}
 
-        </View>
+            </View>
         </>
     )
 }
