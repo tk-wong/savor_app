@@ -102,13 +102,13 @@ def get_all_groups():
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
             ChatHistoryModel.timestamp.desc()).first().timestamp for group in chat_groups}
     groups_data = [{"id": group.id, "name": group.name,
-                    "last_edit": last_chat_histories.get(group.id).isoformat() } for
+                    "last_edit": last_chat_histories.get(group.id).isoformat()} for
                    group in chat_groups if last_chat_histories.get(
-                        group.id) is not None] # avoid returning groups without any chat history
+            group.id) is not None]  # avoid returning groups without any chat history
     return {"chat_groups": groups_data}, 200
 
 
-@chat_blueprint.route('/group/<int:group_id>', methods=['GET'])
+@chat_blueprint.route('/group/<int:group_id>/history', methods=['GET'])
 @jwt_required()
 def get_chat_history(group_id):
     user_id = int(get_jwt_identity())
@@ -119,6 +119,7 @@ def get_chat_history(group_id):
         return {"message": "Unauthorized access to chat group"}, 403
     chat_history = ChatHistoryModel.query.filter_by(chat_group_id=group_id).all()
     history_data = [
-        {"id": history.id, "prompt": history.prompt, "response": history.response, "image_url": history.image_url} for
+        {"id": history.id, "prompt": history.prompt, "response": history.response, "image_url": history.image_url,
+         "timestamp": history.timestamp} for
         history in chat_history]
     return {"chat_history": history_data}, 200
