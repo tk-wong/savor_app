@@ -5,7 +5,11 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {DetailRecipe} from "../types";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
+import {
+    ExpoSpeechRecognitionModule,
+    ExpoSpeechRecognitionResult, ExpoSpeechRecognitionResultEvent,
+    useSpeechRecognitionEvent
+} from "expo-speech-recognition";
 // interface SampleDetailRecipe {
 //     id: number;
 //     name: string;
@@ -101,11 +105,32 @@ export default function RecipePage() {
             setTimeout(() => startVoiceInteraction(), 100);
         }
     })
-    useSpeechRecognitionEvent("result", (event) => {
+    const speechResultHandler = async (event: ExpoSpeechRecognitionResultEvent) => {
         const transcript = event.results[0]?.transcript.toLowerCase();
         setVoiceTranscript(transcript)
         console.log("Recognized speech:", transcript);
-    })
+        if(transcript.includes("next step") || transcript.includes("next")) {
+            if (stepIndex + 1 <= recipe.instructions.length - 1) {
+                const nextIndex = stepIndex + 1;
+                setStepIndex(nextIndex);
+                speakStep(nextIndex);
+            }
+        } else if (transcript.includes("previous step") || transcript.includes("previous") || transcript.includes("back")) {
+            if (stepIndex - 1 >= 0) {
+                const nextIndex = stepIndex - 1;
+                setStepIndex(nextIndex);
+                speakStep(nextIndex);
+            }
+        } else if (transcript.includes("repeat")) {
+            speakStep(stepIndex);
+        } else if (transcript.includes("reset")) {
+            setStepIndex(0);
+            speakStep(0);
+        } else if (transcript.includes("stop")) {
+            await stopSpeaking();
+        }
+    };
+    useSpeechRecognitionEvent("result", speechResultHandler)
     const startVoiceInteraction = () => {
         console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
         ExpoSpeechRecognitionModule.getPermissionsAsync().then(

@@ -11,6 +11,12 @@
     "lint": "expo lint",
     "test": "jest"
   },
+ "jest": {
+   "preset": "jest-expo",
+   "transformIgnorePatterns": [
+     "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
+   ]
+ },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-vector-icons/material-design-icons": "^12.4.2",
