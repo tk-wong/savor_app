@@ -12,7 +12,7 @@ def test_login(client, sample_user, mock_user_query, mocker):
         "user": {"id": sample_user.id, "username": sample_user.username, "access_token": "mock_access_token"}}
 
 
-def test_invalid_user(client, sample_user, mock_user_query):
+def test_invalid_user(client, mock_user_query):
     mock_user_query.filter_by.return_value.first.return_value = None
     response = client.post("/api/user/login", data=json.dumps({"email": "notexist@abc.com", "password": "testing"}),
                            content_type='application/json')
