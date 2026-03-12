@@ -1,28 +1,31 @@
 import {Feather} from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useHeaderHeight} from '@react-navigation/elements';
-import React, {Dispatch, SetStateAction, useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Alert, Platform, useColorScheme, View} from "react-native";
 import {Actions, ActionsProps, GiftedChat, IMessage, MessageTextProps, Send, SendProps} from 'react-native-gifted-chat';
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {getNewChatGroup, sendMessage} from "../api/chat";
+import {getChatHistoryByGroupId, getNewChatGroup, sendMessage} from "../api/chat";
 import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {Stack, useRouter} from "expo-router";
+import {Stack, useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
+import {ChatResponse} from "@/src/types/response";
 
-function HeaderRightButton({clearChat}: {clearChat: () => void}) {
+function HeaderRightButton({clearChat}: { clearChat: () => void }) {
     const router = useRouter()
     return (
         <View style={{flexDirection: "row"}}>
             <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}/>
-            <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}/>
+            <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}
+                                 accessibilityHint={"new chat"}/>
         </View>
     );
 }
+
 //
 // const useMessage = (): [IMessage[], Dispatch<SetStateAction<IMessage[]>>]  => {
 //     const [messages, setMessages] = useState<IMessage[]>([]);
@@ -40,21 +43,55 @@ export default function ChatPage() {
         android: headerHeight, // Android often handles it better with just the header height
     });
 
-    useEffect(() => {
-        setMessages([
-            {
-                _id: 1,
-                text: 'Hello **developer**',
-                createdAt: new Date(),
-                user: {
-                    _id: 2,
-                    // name: 'John Doe',
-                    // avatar: 'https://placeimg.com/140/140/any',
-                },
-            },
-        ])
-    }, [])
+    // useEffect(() => {
+    //     setMessages([
+    //         {
+    //             _id: 1,
+    //             text: 'Hello **developer**',
+    //             createdAt: new Date(),
+    //             user: {
+    //                 _id: 2,
+    //                 // name: 'John Doe',
+    //                 // avatar: 'https://placeimg.com/140/140/any',
+    //             },
+    //         },
+    //     ])
+    // }, [])
 
+    useFocusEffect(useCallback(() => {
+        const params = useLocalSearchParams();
+        const initialChatGroupId = params.chatGroupId ? parseInt(params.chatGroupId as string, 10) : null;
+        if (initialChatGroupId) {
+            setChatGroupId(initialChatGroupId);
+            console.log("Loaded chat group ID from params:", initialChatGroupId);
+            getChatHistoryByGroupId(initialChatGroupId).then((response) => {
+                const sortedHistory = response.chat_history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                const formattedMessages = sortedHistory.map((msg) => ([
+                    {
+                        _id: msg.id,
+                        text: msg.prompt,
+                        createdAt: new Date(msg.timestamp),
+                        user: {
+                            _id: 1
+                        }
+                    },
+                    {
+                        _id: msg.id + 0.5, // Ensure unique ID for response message
+                        text: msg.response,
+                        createdAt: new Date(msg.timestamp),
+                        user: {
+                            _id: "bot",
+                            name: 'SavorBot',
+                        }
+                    }
+                ]));
+                const fullMessageList = formattedMessages.flat();
+                setMessages(fullMessageList);
+            })
+        } else {
+            console.log("No chat group ID in params, starting with new chat.");
+        }
+    }, []))
     // useSpeechRecognitionEvent("end", () => {
     //     setlstening(false);
     // });
@@ -91,7 +128,7 @@ export default function ChatPage() {
 
         const sendToBackend = (groupId: number) => {
             console.log("Group ID:", groupId);
-            sendMessage(messageText, groupId).then((response) => {
+            const handleMessageResponse = (response: ChatResponse) => {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [sanitizedMessage]),
                 )
@@ -141,11 +178,13 @@ export default function ChatPage() {
                     const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
                     speak(cleanedText).then();
                 }
-            }).catch((error: ApiRequestError) => {
+            };
+            const handleMessageError = (error: ApiRequestError) => {
                 console.error("Error sending message:", error.message);
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
 
-            })
+            };
+            sendMessage(messageText, groupId).then(handleMessageResponse).catch(handleMessageError)
         };
 
         if (chatGroupId === null) {
@@ -235,7 +274,10 @@ export default function ChatPage() {
                 options={{
                     headerShown: true,
                     title: "Chat with SavorBot",
-                    headerRight: () => <HeaderRightButton clearChat={() => setMessages([])}/>
+                    headerRight: () => <HeaderRightButton clearChat={() => {
+                        setChatGroupId(null);
+                        setMessages([])
+                    }}/>
 
                 }}
             />
@@ -283,4 +325,3 @@ export const renderSend = React.memo((props: SendProps<IMessage>) => (
     </Send>
 ))
 
-// TODO: fetch chat history from backend and display it in the chat interface, and also send new messages to the backend to store them in the database.

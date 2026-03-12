@@ -1,5 +1,5 @@
 import {SafeAreaView} from "react-native-safe-area-context";
-import {useFocusEffect} from "expo-router";
+import {useFocusEffect, useRouter} from "expo-router";
 import {useCallback, useEffect, useState} from "react";
 import {Alert, FlatList, Text, View, TouchableOpacity} from "react-native";
 import {ApiRequestError} from "@/src/api/apiRequestError";
@@ -45,7 +45,11 @@ export default function ChatHistoryPage() {
                 renderItem={({item}) => {
                     const date = parseISO(item.last_edited)
                     const formatDate = format(date, "do, MMM yyyy")
-                    return (<TouchableOpacity onPress={() => {console.log(`Chat group id: ${item.id}`);}}>
+                    return (<TouchableOpacity onPress={() => {
+                        const router = useRouter();
+                        console.log(`Chat group id: ${item.id}`);
+                        router.push({pathname: `/chatPage`, params: {chatGroupId: item.id}})
+                    }}>
                         <Text>{item.name}</Text>
                         <Text>{formatDate}</Text>
                     </TouchableOpacity>

@@ -2,6 +2,7 @@ import apiClient from "./client";
 import {AllChatGroupResponse, ChatResponse} from "../types/response";
 import { CreateChatGroupResponse } from "../types/response/CreateChatGroupResponse";
 import { mapApiError } from "./apiRequestError";
+import {ChatHistoryResponse} from "@/src/types/response/ChatHistoryResponse";
 
 
 export const sendMessage = async (prompt: string, group_id: number): Promise<ChatResponse> => {
@@ -30,6 +31,15 @@ export const getAllChatGroups = async (): Promise<AllChatGroupResponse> => {
     try {
         const response = await apiClient.get("/chat/group/all");
         return response.data; // Assuming the response contains the list of chat groups
+    } catch (error) {
+        throw mapApiError(error);
+    }
+}
+
+export const getChatHistoryByGroupId = async (group_id: number): Promise<ChatHistoryResponse> => {
+    try {
+        const response = await apiClient.get(`/chat/group/${group_id}/history`);
+        return response.data.chat_history; // Assuming the response contains the chat history for the group
     } catch (error) {
         throw mapApiError(error);
     }
