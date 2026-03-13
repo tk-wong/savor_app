@@ -118,8 +118,6 @@ export default function RecipePage() {
             repeatStep()
         } else if (transcript.includes("reset")) {
             resetStep();
-        } else if (transcript.includes("stop")) {
-            stopSpeaking().then();
         }
     };
     useSpeechRecognitionEvent("result", speechResultHandler)
