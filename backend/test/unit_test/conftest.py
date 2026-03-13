@@ -4,6 +4,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
+from backend.models.recipe_model import Recipe
 from backend.models.user_model import User
 
 
@@ -74,3 +75,20 @@ def sample_user(app, mock_session):
 def mock_user_query(mocker, app):
     mock_query = mocker.patch.object(User, "query")
     yield mock_query
+
+
+@pytest.fixture()
+def mock_jwt_required(mocker):
+    return mocker.patch('flask_jwt_extended.view_decorators.verify_jwt_in_request')
+
+
+@pytest.fixture()
+def mock_get_jwt_identity(mocker):
+    return mocker.patch("backend.recipe.get_jwt_identity", return_value="1")
+
+
+@pytest.fixture()
+def mock_recipe_list( mock_session):
+    recipe1 = (1, "Recipe 1", "https://example.com/recipe1.jpg")
+    recipe2 = (2, "Recipe 2", "https://example.com/recipe2.jpg")
+    return [recipe1, recipe2]
