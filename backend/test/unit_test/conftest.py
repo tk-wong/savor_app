@@ -1,9 +1,12 @@
 import os
+from types import SimpleNamespace
 
 import pytest
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
+from backend.models.ingredient_model import Ingredient
+from backend.models.recipe_ingredient_model import RecipeIngredient
 from backend.models.recipe_model import Recipe
 from backend.models.user_model import User
 
@@ -65,7 +68,7 @@ def runner(app):
 
 
 @pytest.fixture()
-def sample_user(app, mock_session):
+def mock_user(app, mock_session):
     password_hash = generate_password_hash("testing")
     user = User(id=1, email="example@abc.com", username="Example User", password_hash=password_hash)
     return user
@@ -88,7 +91,34 @@ def mock_get_jwt_identity(mocker):
 
 
 @pytest.fixture()
-def mock_recipe_list( mock_session):
+def mock_recipe_list(mock_session):
     recipe1 = (1, "Recipe 1", "https://example.com/recipe1.jpg")
     recipe2 = (2, "Recipe 2", "https://example.com/recipe2.jpg")
     return [recipe1, recipe2]
+
+
+@pytest.fixture()
+def mock_recipe_query(mocker, app):
+    mock_query = mocker.patch.object(Recipe, "query")
+    yield mock_query
+
+
+@pytest.fixture()
+def mock_recipe_ingredients_query(mocker, app):
+    mock_query = mocker.patch.object(RecipeIngredient, "query")
+    yield mock_query
+
+
+@pytest.fixture()
+def mock_detail_recipe(app):
+    recipe_1 = Recipe(id=1, title="Recipe 1", image_url="https://example.com/recipe1.jpg",
+                      direction="Test instruction1\n\nTest instruction2", tips="Test tip1\n\nTest tip2")
+    return recipe_1
+
+
+@pytest.fixture()
+def mock_detail_ingredients(app):
+    ingredient_list = [Ingredient(id=1, name="Ingredient 1"), Ingredient(id=2, name="Ingredient 2")]
+    recipe_ingredient_1 = SimpleNamespace(recipe_id=1, ingredient_id=1, quantity="100g", ingredient=ingredient_list[0])
+    recipe_ingredient_2 = SimpleNamespace(recipe_id=1, ingredient_id=2, quantity="200g", ingredient=ingredient_list[1])
+    return [recipe_ingredient_1, recipe_ingredient_2]

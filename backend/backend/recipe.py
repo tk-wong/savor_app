@@ -20,7 +20,7 @@ def get_all_recipe():
 
 @recipe_blueprint.route('/<int:recipe_id>', methods=['GET'])
 @jwt_required()
-def get_recipe(recipe_id):
+def get_recipe_by_id(recipe_id):
     user_id = int(get_jwt_identity())
     recipe = Recipe.query.filter_by(id=recipe_id, create_user_id=user_id).first()
     if not recipe:
@@ -29,5 +29,6 @@ def get_recipe(recipe_id):
     message = {"id": recipe.id, "title": recipe.title, "description": recipe.description,
                "direction": recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.ingredient.id, "name": ingredient.ingredient.name, "quantity": ingredient.quantity} for
-            ingredient in ingredients], "image_url": recipe.image_url}
+            ingredient in ingredients], "image_url": recipe.image_url,
+               "tips": recipe.tips.split("\n\n") if recipe.tips else []}
     return {"recipe": message}, 200
