@@ -24,11 +24,11 @@
         :root {
             --color-primary: #D0BCFF;
             --color-on-primary: #381E72;
-            --color-primary-container: #4F378B;
-            --color-on-primary-container: #EADDFF;
+            --color-primary-container:  #4F378B ;
+            --color-on-primary-container:#EADDFF  ;
             --color-secondary: #CCC2DC;
             --color-on-secondary: #332D41;
-            --color-surface: #141218;
+            --color-surface: #121212;
             --color-on-surface: #E6E0E9;
             --color-on-surface-variant: #CAC4D0;
         }
