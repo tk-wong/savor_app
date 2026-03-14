@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities{
+
+    .my-global-text {
+        @apply text-lg font-bold text-blue-600;
+    }
+
+    .global-button {
+        @apply rounded-xl items-center p-[20px] border-gray-50 bg-gray-300 border;
+    }
+    .global-text-input {
+        @apply border-black border rounded-lg p-2;
+    }
+}
