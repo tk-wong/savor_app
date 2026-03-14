@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    :root{
+        @apply font-sans
+    }
+    @media (prefers-color-scheme: light) {
+        :root{
+            --color-primary:  #6750A4 ;
+            --color-on-primary: #FFFFFF;
+            --color-secondary: #625B71;
+            --color-on-secondary: #FFFFFF;
+            --color-surface: #FEF7FF;
+            --color-on-surface: #1D1B20;
+            --color-on-surface-variant: #49454F;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        :root{
+            --color-primary: #D0BCFF ;
+            --color-on-primary: #381E72;
+            --color-secondary: #CCC2DC;
+            --color-on-secondary: #332D41;
+            --color-surface: #141218;
+            --color-on-surface:  #E6E0E9;
+            --color-on-surface-variant: #CAC4D0;
+        }
+    }
+}
+
 @layer utilities{
 
     .my-global-text {
@@ -9,9 +37,12 @@
     }
 
     .global-button {
-        @apply rounded-xl items-center p-[20px] border-gray-50 bg-gray-300 border;
+        @apply rounded-xl items-center p-[20px] border-gray-50 bg-gray-300 border ;
     }
     .global-text-input {
-        @apply border-black border rounded-lg p-2;
+        @apply  border rounded-lg p-2;
+    }
+    .global-text{
+        @apply text-lg font-sans;
     }
 }
