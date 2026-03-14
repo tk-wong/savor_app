@@ -1,15 +1,15 @@
 import json
 
 
-def test_login(client, sample_user, mock_user_query, mocker):
-    mock_user_query.filter_by.return_value.first.return_value = sample_user
+def test_login(client, mock_user, mock_user_query, mocker):
+    mock_user_query.filter_by.return_value.first.return_value = mock_user
     mocker.patch("backend.user.create_access_token", return_value="mock_access_token")
     response = client.post("/api/user/login", data=json.dumps({"email": "example@abc.com", "password": "testing"})
                            , content_type='application/json')
     assert response.status_code == 200
     response_json = response.get_json()
     assert response_json == {
-        "user": {"id": sample_user.id, "username": sample_user.username, "access_token": "mock_access_token"}}
+        "user": {"id": mock_user.id, "username": mock_user.username, "access_token": "mock_access_token"}}
 
 
 def test_invalid_user(client, mock_user_query):
@@ -20,8 +20,8 @@ def test_invalid_user(client, mock_user_query):
     assert response.get_json() == {'message': 'Invalid credentials'}
 
 
-def test_invalid_password(client, sample_user, mock_user_query):
-    mock_user_query.filter_by.return_value.first.return_value = sample_user
+def test_invalid_password(client, mock_user, mock_user_query):
+    mock_user_query.filter_by.return_value.first.return_value = mock_user
     response = client.post("/api/user/login",
                            data=json.dumps({"email": "example@abc.com", "password": "wrong_password"}),
                            content_type='application/json')

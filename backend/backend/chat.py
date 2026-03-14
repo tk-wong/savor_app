@@ -55,7 +55,7 @@ def chat():
         recipe_title = recipe_data.get("title")
         new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
                             direction="\n\n".join(recipe_data.get("direction", [])),
-                            create_user_id=int(get_jwt_identity()), image_url="")
+                            create_user_id=int(get_jwt_identity()), image_url="", tips="\n\n".join(recipe_data.get("tips", [])))
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
