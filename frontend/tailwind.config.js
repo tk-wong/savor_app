@@ -16,6 +16,8 @@ module.exports = {
             colors: {
                 primary: "var(--color-primary)",
                 "on-primary": "var(--color-on-primary)",
+                "primary-container": "var(--color-primary-container)",
+                "on-primary-container": "var(--color-on-primary-container)",
                 secondary: "var(--color-secondary)",
                 "on-secondary": "var(--color-on-secondary)",
                 surface: "var(--color-surface)",
@@ -23,6 +25,7 @@ module.exports = {
             },
             textColor :{
                 "on-primary": "var(--color-on-primary)",
+                "on-primary-container": "var(--color-on-primary-container)",
                 "on-secondary": "var(--color-on-secondary)",
                 "on-surface": "var(--color-on-surface)",
                 "on-surface-variant": "var(--color-on-surface-variant)",
@@ -30,6 +33,8 @@ module.exports = {
             borderColor: {
                 primary: "var(--color-primary)",
                 "on-primary": "var(--color-on-primary)",
+                "primary-container": "var(--color-primary-container)",
+                "on-primary-container": "var(--color-on-primary-container)",
                 secondary: "var(--color-secondary)",
                 "on-secondary": "var(--color-on-secondary)",
                 surface: "var(--color-surface)",
