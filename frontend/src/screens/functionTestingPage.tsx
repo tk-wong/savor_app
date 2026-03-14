@@ -5,7 +5,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import "../../global.css";
 // import styles = module;
 import {useTextToSpeech} from "../hooks/useTextToSpeech"
-import {Styleeheader} from "@/src/components/styleeheader";
+import {StyledHeader} from "@/src/components/styledHeader";
 export default function FunctionTestingPage() {
     const router = useRouter();
     const speak = () => {
@@ -19,7 +19,7 @@ export default function FunctionTestingPage() {
 
     return (
         <>
-           <Styleeheader title={"Function Testing Page"}/>
+           <StyledHeader title={"Function Testing Page"}/>
             <SafeAreaView className="flex gap-4 mx-auto">
                 <TouchableOpacity onPress={() => {
                     // for debugging

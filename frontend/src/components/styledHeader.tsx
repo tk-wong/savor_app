@@ -1,7 +1,7 @@
 import {useColorScheme} from "react-native";
 import {Stack} from "expo-router";
 
-export function Styleeheader({title}: { title: string }) {
+export function StyledHeader({title}: { title: string }) {
     const colorScheme = useColorScheme();
     const isDarkMode = colorScheme === "dark";
     return <Stack.Screen

@@ -3,7 +3,7 @@ import {useState} from "react";
 import {Alert, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {login} from "../api";
 import {router} from "expo-router";
-import {Styleeheader} from "@/src/components/styleeheader";
+import {StyledHeader} from "@/src/components/styledHeader";
 
 function LoginView() {
     const [email, setEmail] = useState("")
@@ -101,7 +101,7 @@ function LoginView() {
 export default function LoginPage() {
     return (
         <>
-            <Styleeheader title={"Welcome to Savor!"}/>
+            <StyledHeader title={"Welcome to Savor!"}/>
             <LoginView/>
         </>
     );
