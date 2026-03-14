@@ -1,34 +1,9 @@
 import {SafeAreaView} from "react-native-safe-area-context";
 import {useState} from "react";
-import {Alert, Text, TextInput, TouchableOpacity, useColorScheme, View} from "react-native";
+import {Alert, Text, TextInput, TouchableOpacity, View} from "react-native";
 import {login} from "../api";
-import {router, Stack} from "expo-router";
-
-function LoginHeader() {
-    const colorScheme = useColorScheme();
-    const isDarkMode = colorScheme === "dark";
-    return <Stack.Screen
-        options={{
-            headerShown: true,
-            title: "Welcome to Savor!",
-            headerTitleAlign: "center",
-            contentStyle: {
-                backgroundColor: isDarkMode ? "#141218" : "#FEF7FF",
-            },
-            headerStyle: {
-                backgroundColor: isDarkMode ? "#141218" : "#FEF7FF",
-            },
-            headerTitleStyle: {
-                fontFamily: "inter-bold",
-                fontSize: 20,
-                color: isDarkMode ? "#E6E0E9" : "#1D1B20",
-            },
-            // contentStyle : {backgroundColor: "#FEF7FF"},
-
-        }}
-
-    />;
-}
+import {router} from "expo-router";
+import {Styleeheader} from "@/src/components/styleeheader";
 
 function LoginView() {
     const [email, setEmail] = useState("")
@@ -95,7 +70,7 @@ function LoginView() {
 export default function LoginPage() {
     return (
         <>
-            <LoginHeader/>
+            <Styleeheader title={"Welcome to Savor!"}/>
             <LoginView/>
         </>
     );
