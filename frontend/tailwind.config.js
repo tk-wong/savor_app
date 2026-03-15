@@ -22,6 +22,7 @@ module.exports = {
                 "on-secondary": "var(--color-on-secondary)",
                 surface: "var(--color-surface)",
                 "on-surface": "var(--color-on-surface)",
+                "surface-container": "var(--color-surface-container)",
             },
             textColor :{
                 "on-primary": "var(--color-on-primary)",

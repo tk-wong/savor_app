@@ -1,11 +1,18 @@
-import { useHeaderHeight } from "@react-navigation/elements";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, Image, ImageSourcePropType, ListRenderItem, Platform, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ApiRequestError } from "../api/apiRequestError";
-import { getAllRecipes } from "../api/recipe";
-import { Recipe } from "../types";
+import {useHeaderHeight} from "@react-navigation/elements";
+import {router} from "expo-router";
+import React, {useEffect, useState} from "react";
+import {
+    FlatList,
+    Image,
+    ImageSourcePropType,
+    ListRenderItem,
+    Platform,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
+import {StyledHeader} from "@/src/components/styledHeader";
 
 export default function AllRecipePage() {
     const headerHeight = useHeaderHeight();
@@ -14,10 +21,13 @@ export default function AllRecipePage() {
     //     ios: headerHeight + insets.bottom,
     //     android: headerHeight, // Android often handles it better with just the header height
     // });
-    return <View>
-        <RecipeCard />
-        {Platform.OS === 'android' && <View style={{ height: insets.bottom }} />}
-    </View>
+    return (<>
+        <StyledHeader title={"All Recipes"}/>
+        <SafeAreaView>
+            <RecipeCard/>
+            {Platform.OS === 'android' && <View style={{height: insets.bottom}}/>}
+        </SafeAreaView>
+    </>)
 }
 
 interface RecipeCardItem {
@@ -29,34 +39,51 @@ interface RecipeCardItem {
 function RecipeCard() {
     const [recipeList, setRecipeList] = useState<RecipeCardItem[]>([]);
 
-    useFocusEffect(useCallback(() => {
-        console.log("Fetching all recipes");
-        getAllRecipes().then((data) => {
-            const formattedRecipes = data.recipes.map((recipe: Recipe) => ({
-                id: recipe.id,
-                name: recipe.title,
-                image: { uri: recipe.image_url }, // Convert image URL to ImageSourcePropType
-            }));
-            setRecipeList(formattedRecipes);
-        }).catch((error: ApiRequestError) => {
-            console.error("Error fetching recipes:", error.message);
-            Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching all recipes.");
-        })
-    },[]));
-    const renderItem: ListRenderItem<RecipeCardItem> = ({ item }) => {
-        return <TouchableOpacity onPress={() => {
-            console.log(`Recipe id: ${item.id}`);
-            router.push({ pathname: `/recipePage`, params: { id: item.id } })
-        }
-        }>
-            <Image source={item.image} style={{ width: 100, height: 100 }} />
-            <Text>{item.name}</Text>
-        </TouchableOpacity>
+    // useFocusEffect(useCallback(() => {
+    //     console.log("Fetching all recipes");
+    //     getAllRecipes().then((data) => {
+    //         const formattedRecipes = data.recipes.map((recipe: Recipe) => ({
+    //             id: recipe.id,
+    //             name: recipe.title,
+    //             image: { uri: recipe.image_url }, // Convert image URL to ImageSourcePropType
+    //         }));
+    //         setRecipeList(formattedRecipes);
+    //     }).catch((error: ApiRequestError) => {
+    //         console.error("Error fetching recipes:", error.message);
+    //         Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching all recipes.");
+    //     })
+    // },[]));
+    useEffect(() => {
+        setRecipeList(Array.from({length: 20}, (_, i) => ({
+            id: i + 1,
+            name: `Spaghetti Carbonara with cheese`,
+            image: require("../../assets/images/react-logo.png") // Use a local placeholder image
+        })))
+    }, []);
+    const renderItem: ListRenderItem<RecipeCardItem> = ({item}) => {
+        return (
+            <View className={"flex-1 mx-3 items-center"}>
+                <TouchableOpacity onPress={() => {
+                    console.log(`Recipe id: ${item.id}`);
+                    router.push({pathname: `/recipePage`, params: {id: item.id}})
+                }
+                }
+
+                >
+                    <Image source={{uri: "https://blocks.astratic.com/img/general-img-landscape.png"}}
+                           className={"max-w-full w-full aspect-square rounded-xl"}/>
+                    <Text className={"mt-2 text-center text-sm global-text text-on-surface"}>{item.name}</Text>
+                </TouchableOpacity>
+            </View>
+        )
     };
     return (
 
         <FlatList data={recipeList} renderItem={renderItem} numColumns={2}
-            keyExtractor={(item) => item.id.toString()} />
+                  keyExtractor={(item) => item.id.toString()}
+                  contentContainerClassName={"gap-4 px-4 pb-6"}
+                  columnWrapperClassName={"gap-4"}
+        />
 
     )
 }

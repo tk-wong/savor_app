@@ -47,7 +47,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <Pressable onPress={() => {
                     // for debugging
-                    router.push({pathname: `/recipePage`, params: {id: 1}})
+                    router.push({pathname: `/recipeTestingPage`, params: {id: 1}})
                 }
 
                 } style={style.button}>

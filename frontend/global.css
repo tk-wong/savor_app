@@ -18,6 +18,7 @@
             --color-surface: #FEF7FF;
             --color-on-surface: #1D1B20;
             --color-on-surface-variant: #49454F;
+            --color-surface-container: #E6E0E9;
         }
     }
     @media (prefers-color-scheme: dark) {
@@ -31,6 +32,7 @@
             --color-surface: #121212;
             --color-on-surface: #E6E0E9;
             --color-on-surface-variant: #CAC4D0;
+            --color-surface-container: #36343B;
         }
     }
 }
