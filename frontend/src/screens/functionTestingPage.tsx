@@ -23,12 +23,12 @@ export default function FunctionTestingPage() {
             <SafeAreaView className="flex gap-4 mx-auto">
                 <TouchableOpacity onPress={() => {
                     // for debugging
-                    router.navigate("/chatPage")
+                    router.navigate("/chatTestingPage")
                 }
                 } style={style.button}>
                     <Text>Chat page</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={()=>router.navigate("/chatHistoryPage")} style={style.button}>
+                <TouchableOpacity onPress={()=>router.navigate("/chatHistoryTestingPage")} style={style.button}>
                     <Text>Chat history page</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
@@ -38,7 +38,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                     // for debugging
-                    router.navigate("/allRecipePage")
+                    router.navigate("/allRecipeTestingPage")
                 }
 
                 } style={style.button}>

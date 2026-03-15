@@ -64,8 +64,8 @@ function LoginView() {
                 <TouchableOpacity onPress={() => {
                     setEmail("");
                     setPassword("")
-                }} className={"global-button !bg-secondary flex-1"}>
-                    <Text className={"global-text !text-on-secondary"}>Reset</Text>
+                }} className={"global-button !border !border-primary flex-1 !bg-transparent"}>
+                    <Text className={"global-text !text-primary"}>Reset</Text>
                 </TouchableOpacity>
                 {/*<TouchableOpacity onPress={() => {*/}
                 {/*    setEmail("");*/}
@@ -88,12 +88,12 @@ function LoginView() {
             </View>
         </View>
 
-        {/*<TouchableOpacity onPress={() => {*/}
-        {/*    // for debugging*/}
-        {/*    router.push("/functionTestingPage")*/}
-        {/*}} className={"global-button bg-gray-400"}>*/}
-        {/*    <Text className={"global-text"}>Function testing page</Text>*/}
-        {/*</TouchableOpacity>*/}
+        <TouchableOpacity onPress={() => {
+            // for debugging
+            router.push("/functionTestingPage")
+        }} className={"global-button bg-gray-400"}>
+            <Text className={"global-text"}>Function testing page</Text>
+        </TouchableOpacity>
 
     </SafeAreaView>;
 }

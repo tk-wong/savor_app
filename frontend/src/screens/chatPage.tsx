@@ -58,8 +58,8 @@ export default function ChatPage() {
     //     ])
     // }, [])
 
+    const params = useLocalSearchParams();
     useFocusEffect(useCallback(() => {
-        const params = useLocalSearchParams();
         const initialChatGroupId = params.chatGroupId ? parseInt(params.chatGroupId as string, 10) : null;
         if (initialChatGroupId) {
             setChatGroupId(initialChatGroupId);
