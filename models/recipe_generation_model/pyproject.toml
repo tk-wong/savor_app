@@ -17,6 +17,7 @@ dependencies = [
     "langchain-postgres>=0.0.16",
     "ollama>=0.6.1",
     "polars>=1.37.1",
+    "psycopg>=3.3.3",
     "psycopg2-binary>=2.9.11",
     "sqlalchemy-utils>=0.42.1",
     "tqdm>=4.67.1",
