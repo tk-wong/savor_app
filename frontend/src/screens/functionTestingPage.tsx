@@ -23,7 +23,7 @@ export default function FunctionTestingPage() {
             <SafeAreaView className="flex gap-4 mx-auto">
                 <TouchableOpacity onPress={() => {
                     // for debugging
-                    router.navigate("/chatTestingPage")
+                    router.navigate("/chatPage")
                 }
                 } style={style.button}>
                     <Text>Chat page</Text>

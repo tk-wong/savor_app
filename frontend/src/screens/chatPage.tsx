@@ -1,10 +1,19 @@
 import {Feather} from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useHeaderHeight} from '@react-navigation/elements';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {Alert, Platform, useColorScheme, View} from "react-native";
-import {Actions, ActionsProps, GiftedChat, IMessage, MessageTextProps, Send, SendProps} from 'react-native-gifted-chat';
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {
+    Actions,
+    ActionsProps,
+    Bubble, Day,
+    GiftedChat,
+    IMessage,
+    MessageTextProps,
+    Send,
+    SendProps
+} from 'react-native-gifted-chat';
+import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
 import {getChatHistoryByGroupId, getNewChatGroup, sendMessage} from "../api/chat";
 import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
@@ -14,14 +23,24 @@ import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
 import {Stack, useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
 import {ChatResponse} from "@/src/types/response";
+import {cssInterop} from "nativewind";
+import {StyledHeader} from "@/src/components/styledHeader";
+
+cssInterop(MaterialDesignIcons, {
+    className: {
+        target: "style",
+        nativeStyleToProp: {color: true},
+    },
+})
 
 function HeaderRightButton({clearChat}: { clearChat: () => void }) {
     const router = useRouter()
     return (
-        <View style={{flexDirection: "row"}}>
-            <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}/>
+        <View className={"flex-row gap-2 p-2"}>
+            <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}
+                       className={"!color-on-surface"} accessibilityHint={"chat history"}/>
             <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}
-                                 accessibilityHint={"new chat"}/>
+                                 accessibilityHint={"new chat"} className={"!color-on-surface"}/>
         </View>
     );
 }
@@ -34,7 +53,7 @@ function HeaderRightButton({clearChat}: { clearChat: () => void }) {
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([]);
-    const [listening, setlstening] = useState(false);
+    const [listening, setListening] = useState(false);
     const [chatGroupId, setChatGroupId] = useState<number | null>(null);
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
@@ -93,7 +112,7 @@ export default function ChatPage() {
         }
     }, []))
     // useSpeechRecognitionEvent("end", () => {
-    //     setlstening(false);
+    //     setListening(false);
     // });
     useSpeechRecognitionEvent("result", (event) => {
         const transcript = event.results[0]?.transcript;
@@ -110,9 +129,10 @@ export default function ChatPage() {
             }
             onSend([newMessage]);
         }
+        setListening(false)
     });
 
-    const {speak, isSpeaking, stopSpeaking} = useTextToSpeech();
+    const {speak} = useTextToSpeech();
     const onSend = useCallback((newMessages: IMessage[] = []) => {
         const outgoingMessage = newMessages[0];
         const messageText = typeof outgoingMessage?.text === "string" ? outgoingMessage.text.trim() : "";
@@ -174,7 +194,7 @@ export default function ChatPage() {
                 )
                 if (listening) {
                     ExpoSpeechRecognitionModule.stop();
-                    setlstening(false);
+                    setListening(false);
                     const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
                     speak(cleanedText).then();
                 }
@@ -201,12 +221,10 @@ export default function ChatPage() {
         }
     }, [chatGroupId])
     const renderActions = React.memo((props: ActionsProps) => {
-        const colorScheme = useColorScheme()
-        const isDark = colorScheme === 'dark'
 
         const loadIcon = () => {
             const toggleVoiceRecognition = () => {
-                setlstening(!listening);
+                setListening(!listening);
                 const handleVoiceRecognition = (result: ExpoSpeechRecognitionPermissionResponse) => {
                     if (!result.granted) {
                         console.warn("Permissions not granted", result);
@@ -215,7 +233,7 @@ export default function ChatPage() {
                     if (!listening) {
                         ExpoSpeechRecognitionModule.start({
                             lang: "en-US",
-                            interimResults: true,
+                            interimResults: false,
                             continuous: false,
                         });
                     } else {
@@ -260,9 +278,32 @@ export default function ChatPage() {
             />
         )
     })
+    const isDarkMode = useColorScheme() === 'dark';
+    const primaryColor = isDarkMode ? '#D0BCFF' : '#6750A4';
+    const onPrimaryColor = isDarkMode ? '#381E72' : '#FFFFFF';
+    const primaryContainerColor = isDarkMode ? '#4F378B' : '#EADDFF';
+    const onPrimaryContainerColor = isDarkMode ? '#EADDFF' : '#4F378B';
+    const surfaceContainerColor = isDarkMode ? '#36343B' : '#E6E0E9';
+    const onSurfaceColor = isDarkMode ? '#E6E0E9' : '#1D1B20';
     const renderMessageText = (props: MessageTextProps<IMessage>) => {
         if (props.currentMessage) {
-            return <Markdown>
+            return <Markdown style={{
+                body: {
+                    color: props.currentMessage.user._id === 1 ? onPrimaryColor : onPrimaryContainerColor,
+                    fontFamily: "inter-regular",
+                    fontSize: 16,
+                },
+                strong: {
+                    color: props.currentMessage.user._id === 1 ? onPrimaryColor : onPrimaryContainerColor,
+                    fontFamily: "inter-bold",
+                    fontSize: 16,
+                },
+                heading: {
+                    color: props.currentMessage.user._id === 1 ? onPrimaryColor : onPrimaryContainerColor,
+                    fontFamily: "inter-bold",
+                    fontSize: 18,
+                }
+            }}>
                 {props.currentMessage.text}
             </Markdown>
         }
@@ -270,18 +311,14 @@ export default function ChatPage() {
     }
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    title: "Chat with SavorBot",
-                    headerRight: () => <HeaderRightButton clearChat={() => {
-                        setChatGroupId(null);
-                        setMessages([])
-                    }}/>
+            <StyledHeader title={"Chat with Savor bot"} options={{
+                headerRight: () => <HeaderRightButton clearChat={() => {
+                    setChatGroupId(null);
+                    setMessages([])
+                }}/>
 
-                }}
-            />
-            <View style={{flex: 1}}>
+            }}/>
+            <View className={"flex-1"}>
                 <GiftedChat
                     messages={messages}
                     onSend={messages => {
@@ -301,6 +338,33 @@ export default function ChatPage() {
                     // }}
                     renderAvatar={null}
                     renderMessageText={renderMessageText}
+                    renderBubble={(props) => {
+                        return (<Bubble {...props} wrapperStyle={{
+                            left: {
+                                backgroundColor: primaryContainerColor,
+                                padding: 6,
+                            },
+                            right: {
+                                backgroundColor: primaryColor,
+                                padding: 6,
+                            }
+                        }}/>)
+                    }}
+                    timeTextStyle={{
+                        left: {
+                            color: onPrimaryContainerColor,
+                        },
+                        right: {
+                            color: onPrimaryColor,
+                        }
+                    }}
+                    renderDay={(props) => {
+                        return <Day {...props} wrapperStyle={{backgroundColor: surfaceContainerColor}} textProps={{
+                            style: {
+                                color: onSurfaceColor,
+                            }
+                        }}/>
+                    }}
                 />
                 {Platform.OS === 'android' && <View/>}
 
@@ -314,14 +378,23 @@ export const renderSend = React.memo((props: SendProps<IMessage>) => (
         {...props}
         // isDisabled={!(props.text)}
         containerStyle={{
-            width: 44,
-            height: 44,
+            minWidth: 44,
+            minHeight: 44,
             alignItems: 'center',
             justifyContent: 'center',
             marginHorizontal: 4,
         }}
+        textStyle={{
+            marginBottom: 0,
+            marginLeft: 0,
+            marginRight: 0,
+            backgroundColor: 'transparent',
+            fontFamily: "inter-regular",
+        }}
     >
-        <AntDesign name="send" size={24} color="white"/>
+        <View className={"items-center justify-center"}>
+            <AntDesign name="send" size={24} className={"!color-on-surface"}/>
+        </View>
     </Send>
 ))
 

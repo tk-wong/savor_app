@@ -1,6 +1,6 @@
 import {useHeaderHeight} from "@react-navigation/elements";
 import {router} from "expo-router";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {
     FlatList,
     Image,
@@ -8,7 +8,7 @@ import {
     ListRenderItem,
     Platform,
     Text,
-    TouchableOpacity,
+    TouchableOpacity, useWindowDimensions,
     View
 } from "react-native";
 import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
@@ -38,7 +38,12 @@ interface RecipeCardItem {
 
 function RecipeCard() {
     const [recipeList, setRecipeList] = useState<RecipeCardItem[]>([]);
-
+    const { width } = useWindowDimensions();
+    const numColumns = useMemo(() => {
+        const idealItemWidth = 180; // most phones can fit 2 items at 180px, tablets can fit more
+        const columns = Math.floor(width / idealItemWidth);
+        return Math.min(4, Math.max(2, columns)); // force 2–4 columns range
+    }, [width]);
     // useFocusEffect(useCallback(() => {
     //     console.log("Fetching all recipes");
     //     getAllRecipes().then((data) => {
@@ -70,7 +75,7 @@ function RecipeCard() {
                 }
 
                 >
-                    <Image source={{uri: "https://blocks.astratic.com/img/general-img-landscape.png"}}
+                    <Image source={{uri: "https://blocks.astratic.com/img/general-img-square.png"}}
                            className={"max-w-full w-full aspect-square rounded-xl"}/>
                     <Text className={"mt-2 text-center text-sm global-text text-on-surface"}>{item.name}</Text>
                 </TouchableOpacity>
@@ -78,13 +83,12 @@ function RecipeCard() {
         )
     };
     return (
-
-        <FlatList data={recipeList} renderItem={renderItem} numColumns={2}
+        <FlatList data={recipeList} renderItem={renderItem} numColumns={numColumns}
+                  key={numColumns}
                   keyExtractor={(item) => item.id.toString()}
                   contentContainerClassName={"gap-4 px-4 pb-6"}
                   columnWrapperClassName={"gap-4"}
         />
-
     )
 }
 
