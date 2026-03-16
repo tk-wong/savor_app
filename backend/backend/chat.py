@@ -18,6 +18,7 @@ chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
 def chat():
     prompt = request.json.get('prompt')
     chat_group_id = request.json.get('chat_group_id')
+    user_id = int(get_jwt_identity())
     if not prompt:
         return {"message": "Prompt is required"}, 400
     if not chat_group_id:
@@ -26,7 +27,9 @@ def chat():
     if not chat_group:
         return {"message": "Chat group not found"}, 404
     try:
-        model_response = requests.post("http://localhost:5010/recipe_generation", json={"prompt": prompt}, timeout=60)
+        model_response = requests.post("http://localhost:5010/recipe_generation",
+                                       json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
+                                       timeout=60)
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         return {"message": "Model response timed out"}, 504
     if model_response.status_code != 200:
@@ -55,7 +58,8 @@ def chat():
         recipe_title = recipe_data.get("title")
         new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
                             direction="\n\n".join(recipe_data.get("direction", [])),
-                            create_user_id=int(get_jwt_identity()), image_url="", tips="\n\n".join(recipe_data.get("tips", [])))
+                            create_user_id=int(get_jwt_identity()), image_url="",
+                            tips="\n\n".join(recipe_data.get("tips", [])))
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
