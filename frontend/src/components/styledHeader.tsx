@@ -23,6 +23,7 @@ export function StyledHeader({title, options}: { title: string; options?: StackS
             fontSize: 20,
             color: isDarkMode ? "#E6E0E9" : "#1D1B20",
         },
+        headerTintColor : isDarkMode ? "#E6E0E9" : "#1D1B20",
     };
 
     // Helper to merge nested style-like objects safely
