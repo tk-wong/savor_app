@@ -130,7 +130,7 @@ def mock_chat_group_model_class(mocker, mock_session):
 @pytest.fixture()
 def mock_chat_group_data(mocker, mock_session):
     group_1 = SimpleNamespace(id=1, create_user_id=1, name='group1')
-    group_2 = SimpleNamespace(id=2, create_user_id=1, name='group2')
+    group_2 = SimpleNamespace(id=2, create_user_id=2, name='group2')
     return [group_1, group_2]
 
 
