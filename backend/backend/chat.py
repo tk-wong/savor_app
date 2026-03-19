@@ -1,5 +1,6 @@
 import os
 import uuid
+from typing import Any
 
 import flask_jwt_extended
 import requests
@@ -48,43 +49,54 @@ def chat():
     db.session.add(new_chat_history)
     db.session.commit()
     if prompt_type == "question":
-        if chat_group.name == "Unnamed":
-            chat_group.name = prompt[:20] + "..." if len(prompt) > 20 else prompt
-            db.session.commit()
-        return response_data, 200
+        return _handle_question_response(chat_group, prompt, response_data)
     elif prompt_type == "recipe":
-        recipe_data = response_data.get("recipe")
-        if not recipe_data:
-            return {"message": "Response missing recipe data"}, 500
-        recipe_title = recipe_data.get("title")
-        new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
-                            direction="\n\n".join(recipe_data.get("direction", [])),
-                            create_user_id=int(flask_jwt_extended.get_jwt_identity()), image_url="",
-                            tips="\n\n".join(recipe_data.get("tips", [])))
-        if chat_group.name == "Unnamed" and recipe_title:
-            chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
-            db.session.commit()
-        try:
-            image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
-                                           timeout=60)
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            return {"message": "Image generation timed out"}, 504
-        if image_response.status_code != 200:
-            return {"message": "Error generating image from the image generation model"}, 500
-        if not os.path.exists("static/images"):
-            os.makedirs("static/images")
-        image_url = f"static/images/{uuid.uuid4()}.png"
-        with open(image_url, "wb") as f:
-            f.write(image_response.content)
-        response_data["recipe"]["image_url"] = image_url
-        response_data["recipe"]["id"] = new_recipe.id
-        new_chat_history.image_url = image_url
-        new_recipe.image_url = image_url
-        from backend.db_manager import db
-        db.session.add(new_recipe)
-        db.session.commit()
-        return response_data, 200
+        return _handle_recipe_response(chat_group, new_chat_history, response_data)
     return {"message": "Error generating response"}, 500
+
+
+def _handle_question_response(chat_group: Any | None, prompt, response_data) -> tuple[Any, int]:
+    if chat_group.name == "Unnamed":
+        from backend.db_manager import db
+        chat_group.name = prompt[:20] + "..." if len(prompt) > 20 else prompt
+        db.session.commit()
+    return response_data, 200
+
+
+def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistoryModel, response_data) -> tuple[
+    Any, int]:
+    recipe_data = response_data.get("recipe")
+    if not recipe_data:
+        return {"message": "Response missing recipe data"}, 500
+    recipe_title = recipe_data.get("title")
+    new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
+                        direction="\n\n".join(recipe_data.get("direction", [])),
+                        create_user_id=int(flask_jwt_extended.get_jwt_identity()), image_url="",
+                        tips="\n\n".join(recipe_data.get("tips", [])))
+    if chat_group.name == "Unnamed" and recipe_title:
+        chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
+        from backend.db_manager import db
+        db.session.commit()
+    try:
+        image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
+                                       timeout=60)
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        return {"message": "Image generation timed out"}, 504
+    if image_response.status_code != 200:
+        return {"message": "Error generating image from the image generation model"}, 500
+    if not os.path.exists("static/images"):
+        os.makedirs("static/images")
+    image_url = f"static/images/{uuid.uuid4()}.png"
+    with open(image_url, "wb") as f:
+        f.write(image_response.content)
+    response_data["recipe"]["image_url"] = image_url
+    response_data["recipe"]["id"] = new_recipe.id
+    new_chat_history.image_url = image_url
+    new_recipe.image_url = image_url
+    from backend.db_manager import db
+    db.session.add(new_recipe)
+    db.session.commit()
+    return response_data, 200
 
 
 @chat_blueprint.route('/group/new', methods=['GET'])
