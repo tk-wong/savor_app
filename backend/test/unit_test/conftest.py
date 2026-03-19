@@ -138,11 +138,17 @@ def mock_chat_group_data(mocker, mock_session):
 def mock_chat_history_data(mocker, mock_session):
     chat_history_1 = SimpleNamespace(id=1, chat_group_id=1, user_id=1, prompt="Test prompt 1",
                                      response={"response": "Test response 1"},
-                                     timestamp=datetime.datetime.fromisoformat("2024-01-01T00:00:00"))
+                                     timestamp=datetime.datetime.fromisoformat("2024-01-01T00:00:00"),
+                                     image_url="test_url1")
     chat_history_2 = SimpleNamespace(id=2, chat_group_id=2, user_id=1, prompt="Test prompt 2",
                                      response={"response": "Test response 2"},
-                                     timestamp=datetime.datetime.fromisoformat("2024-01-02T00:00:00"))
-    return [chat_history_1, chat_history_2]
+                                     timestamp=datetime.datetime.fromisoformat("2024-01-02T00:00:00"),
+                                     image_url="test_url2")
+    chat_history_3 = SimpleNamespace(id=3, chat_group_id=1, user_id=1, prompt="Test prompt 3",
+                                     response={"response": "Test response 3"},
+                                     timestamp=datetime.datetime.fromisoformat("2024-01-03T00:00:00"),
+                                     image_url="test_url3")
+    return [chat_history_1, chat_history_2, chat_history_3]
 
 
 @pytest.fixture()

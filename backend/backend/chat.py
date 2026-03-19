@@ -122,7 +122,7 @@ def get_chat_history(group_id):
     chat_group = ChatGroupModel.query.filter_by(id=group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404
-    if chat_group.user_id != user_id:
+    if chat_group.create_user_id != user_id:
         return {"message": "Unauthorized access to chat group"}, 403
     chat_history = ChatHistoryModel.query.filter_by(chat_group_id=group_id).all()
     history_data = [
