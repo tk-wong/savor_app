@@ -1,3 +1,4 @@
+import datetime
 import os
 from types import SimpleNamespace
 
@@ -5,6 +6,7 @@ import pytest
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
+from backend.models.chat_history_model import ChatHistoryModel
 from backend.models.ingredient_model import Ingredient
 from backend.models.recipe_ingredient_model import RecipeIngredient
 from backend.models.recipe_model import Recipe
@@ -60,11 +62,6 @@ def mock_session(mocker):
 @pytest.fixture()
 def client(app):
     return app.test_client()
-
-
-@pytest.fixture()
-def runner(app):
-    return app.test_cli_runner()
 
 
 @pytest.fixture()
@@ -128,3 +125,27 @@ def mock_detail_ingredients(app):
 def mock_chat_group_model_class(mocker, mock_session):
     mock_chat_group_model = mocker.patch('backend.chat.ChatGroupModel')
     return mock_chat_group_model
+
+
+@pytest.fixture()
+def mock_chat_group_data(mocker, mock_session):
+    group_1 = SimpleNamespace(id=1, create_user_id=1, name='group1')
+    group_2 = SimpleNamespace(id=2, create_user_id=1, name='group2')
+    return [group_1, group_2]
+
+
+@pytest.fixture()
+def mock_chat_history_data(mocker, mock_session):
+    chat_history_1 = SimpleNamespace(id=1, chat_group_id=1, user_id=1, prompt="Test prompt 1",
+                                     response={"response": "Test response 1"},
+                                     timestamp=datetime.datetime.fromisoformat("2024-01-01T00:00:00"))
+    chat_history_2 = SimpleNamespace(id=2, chat_group_id=2, user_id=1, prompt="Test prompt 2",
+                                     response={"response": "Test response 2"},
+                                     timestamp=datetime.datetime.fromisoformat("2024-01-02T00:00:00"))
+    return [chat_history_1, chat_history_2]
+
+
+@pytest.fixture()
+def mock_chat_history_query(mocker, mock_session):
+    chat_history_query = mocker.patch.object(ChatHistoryModel, "query")
+    return chat_history_query

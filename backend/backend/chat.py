@@ -1,4 +1,3 @@
-import datetime
 import os
 import uuid
 
@@ -104,11 +103,13 @@ def create_new_group():
 def get_all_groups():
     user_id = int(flask_jwt_extended.get_jwt_identity())
     chat_groups = ChatGroupModel.query.filter_by(create_user_id=user_id).all()
-    last_chat_histories: dict[int, datetime.datetime] = {
+    if chat_groups is None:
+        return {"chat_groups": []}, 200
+    last_chat_histories = {
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
-            ChatHistoryModel.timestamp.desc()).first().timestamp for group in chat_groups}
+            ChatHistoryModel.timestamp.desc()).first() for group in chat_groups}
     groups_data = [{"id": group.id, "name": group.name,
-                    "last_edit": last_chat_histories.get(group.id).isoformat()} for
+                    "last_edit": last_chat_histories.get(group.id).timestamp.isoformat()} for
                    group in chat_groups if last_chat_histories.get(
             group.id) is not None]  # avoid returning groups without any chat history
     return {"chat_groups": groups_data}, 200
