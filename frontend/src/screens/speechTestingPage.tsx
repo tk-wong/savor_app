@@ -1,11 +1,18 @@
 import {SafeAreaView} from "react-native-safe-area-context";
-import {ScrollView, Text, TouchableOpacity} from "react-native";
+import {ScrollView, Text, TouchableOpacity, StyleSheet} from "react-native";
 import * as Speech from "expo-speech";
-import {style} from "@/src/style/globalStyle";
 import React, {useState} from "react";
 import {Feather} from "@expo/vector-icons";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
-
+const style = StyleSheet.create(
+    {
+        button: {
+            alignItems: 'center',
+            backgroundColor: '#DDDDDD',
+            padding: 20,
+        },
+    }
+)
 export default function SpeechTestingPage() {
     const speak = () => {
         const thingToSay = 'testing ***** 123';

@@ -1,6 +1,5 @@
-import logging
 import os
-import time
+from logging.config import dictConfig
 
 import flask
 from dotenv import load_dotenv
@@ -10,7 +9,6 @@ from langchain_ollama.llms import OllamaLLM
 
 from recipe_assistant import RecipeAssistant
 from recipe_retriever import RecipeRetriever
-from logging.config import dictConfig
 
 
 def main():
@@ -29,7 +27,7 @@ def main():
             'handlers': ['wsgi']
         }
     })
-    env_path="./.env_dev"
+    env_path = "./.env_dev"
     load_dotenv(env_path)
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")
@@ -44,18 +42,23 @@ def main():
                       )
     classification_model = OllamaLLM(model="qwen3:0.6b")
     embedding_model = OllamaEmbeddings(model="qwen3-embedding:0.6b")
-    recipe_retriever = RecipeRetriever(database_path=db_path,dataset_name="paultimothymooney/recipenlg",
-                                       embeddings_model=embedding_model, csv_name="RecipeNLG_dataset.csv", data_length=10000, app=app)
+    recipe_retriever = RecipeRetriever(database_path=db_path, dataset_name="paultimothymooney/recipenlg",
+                                       embeddings_model=embedding_model, csv_name="RecipeNLG_dataset.csv",
+                                       data_length=10000, app=app)
     recipe_assistant = RecipeAssistant(
-        generation_model=model, classification_model=classification_model, recipe_retriever=recipe_retriever, db_path=db_path, app=app)
+        generation_model=model, classification_model=classification_model, recipe_retriever=recipe_retriever,
+        db_path=db_path, app=app)
 
     @app.route('/recipe_generation', methods=['POST'])
     def recipe_generation():
         request = flask.request.json.get('prompt')
-        if not request:
-            return {"error": "prompt is required"}, 400
-        result = recipe_assistant.handle_request(request)
+        user_id = flask.request.json.get('user_id')
+        group_id = flask.request.json.get('group_id')
+        if not request or not user_id or not group_id:
+            return {"error": "prompt, user_id, and group_id are required"}, 400
+        result = recipe_assistant.handle_request(request, user_id, group_id)
         return flask.Response(result, mimetype="application/json")
+
     app.run(port=5010, debug=True)
 
 

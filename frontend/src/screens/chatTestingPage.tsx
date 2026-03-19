@@ -1,12 +1,13 @@
 import {Feather} from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {useHeaderHeight} from '@react-navigation/elements';
-import React, {useCallback, useState} from 'react';
-import {Alert, Platform, useColorScheme, View} from "react-native";
+import React, {useCallback, useEffect, useState} from 'react';
+import {Platform, useColorScheme, View} from "react-native";
 import {
     Actions,
     ActionsProps,
-    Bubble, Day,
+    Bubble,
+    Day,
     GiftedChat,
     IMessage,
     MessageTextProps,
@@ -14,15 +15,11 @@ import {
     SendProps
 } from 'react-native-gifted-chat';
 import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
-import {getChatHistoryByGroupId, getNewChatGroup, sendMessage} from "../api/chat";
-import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
-import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {Stack, useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
+import {useRouter} from "expo-router";
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
-import {ChatResponse} from "@/src/types/response";
 import {cssInterop} from "nativewind";
 import {StyledHeader} from "@/src/components/styledHeader";
 
@@ -36,9 +33,9 @@ cssInterop(MaterialDesignIcons, {
 function HeaderRightButton({clearChat}: { clearChat: () => void }) {
     const router = useRouter()
     return (
-        <View className={"flex-row gap-2 p-2"}>
-            <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}
-                       className={"!color-on-surface"} accessibilityHint={"chat history"}/>
+        <View className={"flex-row gap-2"}>
+            <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryTestingPage")}
+                       className={"!color-on-surface"}/>
             <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}
                                  accessibilityHint={"new chat"} className={"!color-on-surface"}/>
         </View>
@@ -53,7 +50,7 @@ function HeaderRightButton({clearChat}: { clearChat: () => void }) {
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([]);
-    const [listening, setListening] = useState(false);
+    const [listening, setlstening] = useState(false);
     const [chatGroupId, setChatGroupId] = useState<number | null>(null);
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
@@ -62,58 +59,30 @@ export default function ChatPage() {
         android: headerHeight, // Android often handles it better with just the header height
     });
 
-    // useEffect(() => {
-    //     setMessages([
-    //         {
-    //             _id: 1,
-    //             text: 'Hello **developer**',
-    //             createdAt: new Date(),
-    //             user: {
-    //                 _id: 2,
-    //                 // name: 'John Doe',
-    //                 // avatar: 'https://placeimg.com/140/140/any',
-    //             },
-    //         },
-    //     ])
-    // }, [])
+    useEffect(() => {
+        setMessages([{
+            _id: 2,
+            text: 'Hello hello hello hello hello hello hello hello **user**',
+            createdAt: new Date("2024-06-01T12:01:00Z"),
+            user: {
+                _id: 1,
+                // name: 'John Doe',
+                // avatar: 'https://placeimg.com/140/140/any',
+            },
+        },
+            {
+                _id: 1,
+                text: 'Hello hello hello hello hello hello hello hello **developer**',
+                createdAt: new Date("2024-06-01T12:00:00Z"),
+                user: {
+                    _id: 2,
+                    // name: 'John Doe',
+                    // avatar: 'https://placeimg.com/140/140/any',
+                },
+            }
+        ])
+    }, [])
 
-    const params = useLocalSearchParams();
-    useFocusEffect(useCallback(() => {
-        const initialChatGroupId = params.chatGroupId ? parseInt(params.chatGroupId as string, 10) : null;
-        if (initialChatGroupId) {
-            setChatGroupId(initialChatGroupId);
-            console.log("Loaded chat group ID from params:", initialChatGroupId);
-            getChatHistoryByGroupId(initialChatGroupId).then((response) => {
-                const sortedHistory = response.chat_history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-                const formattedMessages = sortedHistory.map((msg) => ([
-                    {
-                        _id: msg.id,
-                        text: msg.prompt,
-                        createdAt: new Date(msg.timestamp),
-                        user: {
-                            _id: 1
-                        }
-                    },
-                    {
-                        _id: msg.id + 0.5, // Ensure unique ID for response message
-                        text: msg.response,
-                        createdAt: new Date(msg.timestamp),
-                        user: {
-                            _id: "bot",
-                            name: 'SavorBot',
-                        }
-                    }
-                ]));
-                const fullMessageList = formattedMessages.flat();
-                setMessages(fullMessageList);
-            })
-        } else {
-            console.log("No chat group ID in params, starting with new chat.");
-        }
-    }, []))
-    // useSpeechRecognitionEvent("end", () => {
-    //     setListening(false);
-    // });
     useSpeechRecognitionEvent("result", (event) => {
         const transcript = event.results[0]?.transcript;
         console.log(transcript);
@@ -129,102 +98,20 @@ export default function ChatPage() {
             }
             onSend([newMessage]);
         }
-        setListening(false)
+        setlstening(false)
     });
-
-    const {speak} = useTextToSpeech();
     const onSend = useCallback((newMessages: IMessage[] = []) => {
-        const outgoingMessage = newMessages[0];
-        const messageText = typeof outgoingMessage?.text === "string" ? outgoingMessage.text.trim() : "";
-
-        if (!outgoingMessage || messageText.length === 0) {
-            return;
-        }
-
-        const sanitizedMessage: IMessage = {
-            ...outgoingMessage,
-            text: messageText,
-        };
-
-        const sendToBackend = (groupId: number) => {
-            console.log("Group ID:", groupId);
-            const handleMessageResponse = (response: ChatResponse) => {
-                setMessages(previousMessages =>
-                    GiftedChat.append(previousMessages, [sanitizedMessage]),
-                )
-                if (!response || !response.prompt_type) {
-                    console.warn("Invalid response from backend:", response);
-                    Alert.alert("Error", "Received invalid response from server. Please try again.");
-                    return;
-                }
-                if (response.prompt_type === "question") {
-                    const message_text = response.answer;
-                } else if (response.prompt_type === "recipe") {
-
-                    const recipe = response.recipe;
-                    const recipe_title = recipe.name;
-                    const recipe_description = recipe.description;
-                    const recipe_ingredients = recipe.ingredients.join("\n");
-                    const recipe_instructions = recipe.instructions.join("\n");
-                    const recipe_tips = recipe.tips.join("\n");
-                    const messageText = `Here's a recipe for you:\n\n
-                    Title: ${recipe_title}\n\n
-                    Description:\n${recipe_description}\n\n
-                    Ingredients:\n${recipe_ingredients}\n\n
-                    Instructions:\n${recipe_instructions}\n\n
-                    Tips:\n${recipe_tips}`;
-                } else {
-                    Alert.alert("Unknown response type", `Received unknown prompt type from server`);
-                    console.warn("Unknown prompt type in response:", response);
-                    return;
-                }
-
-
-                const botMessage: IMessage = {
-                    _id: Math.random(),
-                    text: messageText,
-                    createdAt: new Date(),
-                    user: {
-                        _id: "bot",
-                        name: 'SavorBot',
-                    },
-                }
-                setMessages(previousMessages =>
-                    GiftedChat.append(previousMessages, [botMessage]),
-                )
-                if (listening) {
-                    ExpoSpeechRecognitionModule.stop();
-                    setListening(false);
-                    const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
-                    speak(cleanedText).then();
-                }
-            };
-            const handleMessageError = (error: ApiRequestError) => {
-                console.error("Error sending message:", error.message);
-                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
-
-            };
-            sendMessage(messageText, groupId).then(handleMessageResponse).catch(handleMessageError)
-        };
-
-        if (chatGroupId === null) {
-            getNewChatGroup().then((response) => {
-                console.log("New chat group created with ID:", response.group_id);
-                setChatGroupId(response.group_id);
-                sendToBackend(response.group_id);
-            }).catch((error: ApiRequestError) => {
-                console.error("Error creating new chat group:", error.message);
-                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while creating chat group.");
-            })
-        } else {
-            sendToBackend(chatGroupId);
-        }
-    }, [chatGroupId])
+        setMessages(previousMessages =>
+            GiftedChat.append(previousMessages, newMessages),
+        )
+    }, [])
     const renderActions = React.memo((props: ActionsProps) => {
+        const colorScheme = useColorScheme()
+        const isDark = colorScheme === 'dark'
 
         const loadIcon = () => {
             const toggleVoiceRecognition = () => {
-                setListening(!listening);
+                setlstening(!listening);
                 const handleVoiceRecognition = (result: ExpoSpeechRecognitionPermissionResponse) => {
                     if (!result.granted) {
                         console.warn("Permissions not granted", result);
@@ -318,7 +205,18 @@ export default function ChatPage() {
                 }}/>
 
             }}/>
-            <View className={"flex-1"}>
+            {/*<Stack.Screen*/}
+            {/*    options={{*/}
+            {/*        headerShown: true,*/}
+            {/*        title: "Chat with SavorBot",*/}
+            {/*        headerRight: () => <HeaderRightButton clearChat={() => {*/}
+            {/*            setChatGroupId(null);*/}
+            {/*            setMessages([])*/}
+            {/*        }}/>*/}
+
+            {/*    }}*/}
+            {/*/>*/}
+            <SafeAreaView style={{flex: 1}}>
                 <GiftedChat
                     messages={messages}
                     onSend={messages => {
@@ -365,10 +263,11 @@ export default function ChatPage() {
                             }
                         }}/>
                     }}
+
                 />
                 {Platform.OS === 'android' && <View/>}
 
-            </View>
+            </SafeAreaView>
         </>
     )
 }

@@ -1,9 +1,11 @@
-import { ScrollView, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { Stack, useRouter } from "expo-router";
-import { createUser } from "../api";
-import { useState } from "react";
-import { isAxiosError } from "axios";
-import {style} from "@/src/style/globalStyle";
+import {Alert, StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {useRouter} from "expo-router";
+import {createUser} from "../api";
+import {useState} from "react";
+import {isAxiosError} from "axios";
+import {StyledHeader} from "@/src/components/styledHeader";
+import {SafeAreaView} from "react-native-safe-area-context";
+
 
 export default function CreateUserPage() {
     const router = useRouter();
@@ -33,7 +35,7 @@ export default function CreateUserPage() {
                 });
                 if (error.status === 400) {
                     Alert.alert("Error", "Invalid input. Please check your email, username, and password.");
-                }else if (error.status === 409) {
+                } else if (error.status === 409) {
                     Alert.alert("Error", "User already exists. Please use a different email or username.");
                 } else {
                     Alert.alert("Error", "Failed to create user. Please try again.");
@@ -46,33 +48,39 @@ export default function CreateUserPage() {
     };
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    title: "Create User",
-                }}
-            />
-            <ScrollView>
-                <Text>{"Enter your name"}</Text>
-                <TextInput style={{ borderWidth: 1 }} id={"username"} onChangeText={setUsername} />
-                <Text>{"Enter your email"}</Text>
-                <TextInput style={{ borderWidth: 1 }} id={"email"} onChangeText={setEmail} />
-                <Text>{"Enter your password"}</Text>
-                <TextInput style={{ borderWidth: 1 }} secureTextEntry={true} id={"password"} onChangeText={setPassword} />
-                <TouchableOpacity onPress={createUserHandler
-                } style={style.button}>
-                    <Text>Submit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                    // for debugging
-                    router.navigate("/loginPage")
-                }
+            <StyledHeader title={"Creat User"}/>
+            <SafeAreaView className={"flex-1 bg-surface p-safe gap-4 px-safe-or-4"}>
+                <View className={" justify-between gap-2"}>
+                    <Text className={"global-text text-on-surface"}>{"Enter your name"}</Text>
+                    <TextInput
+                        className={"global-text-input border-on-surface-variant h-20 text-2xl text-on-surface-variant"}
+                        id={"username"} onChangeText={setUsername}/>
+                    <Text className={"global-text text-on-surface"}>{"Enter your email"}</Text>
+                    <TextInput
+                        className={"global-text-input border-on-surface-variant h-20 text-2xl text-on-surface-variant"}
+                        id={"email"} onChangeText={setEmail}/>
+                    <Text className={"global-text text-on-surface"}>{"Enter your password"}</Text>
+                    <TextInput
+                        className={"global-text-input border-on-surface-variant h-20 text-2xl text-on-surface-variant"}
+                        secureTextEntry={true} id={"password"} onChangeText={setPassword}/>
+                </View>
+                <View className={"flex-1"}></View>
+                <View className={"justify-between gap-4"}>
+                    <TouchableOpacity onPress={createUserHandler
+                    } className={"global-button  !bg-primary  "}>
+                        <Text className={"global-text !text-on-primary "}>Submit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                        // for debugging
+                        router.navigate("/loginPage")
+                    }
 
-                } style={style.button}>
+                    } className={"global-button bg-primary-container"}>
 
-                    <Text>Back to Login page</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                        <Text className={"global-text text-on-primary-container"}>Back to Login page</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
         </>
     )
 

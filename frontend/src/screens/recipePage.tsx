@@ -1,12 +1,18 @@
-import {router, Stack, useLocalSearchParams} from "expo-router";
-import {useCallback, useState} from "react";
+import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
+import {useCallback, useRef, useState} from "react";
 import {Image, ScrollView, Text, TouchableOpacity, View} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {DetailRecipe} from "../types";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {getRecipeById} from "@/src/api/recipe";
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
+import {
+    ExpoSpeechRecognitionModule,
+    ExpoSpeechRecognitionResultEvent,
+    useSpeechRecognitionEvent
+} from "expo-speech-recognition";
+import {useSpeechToText} from "@/src/hooks/useSpeechToText";
+import {StyledHeader} from "@/src/components/styledHeader";
 // interface SampleDetailRecipe {
 //     id: number;
 //     name: string;
@@ -32,11 +38,16 @@ export default function RecipePage() {
     };
 
     // const [recipe, setRecipe] = useState<DetailRecipe>( recipe_sample);
-    const [stepIndex, setStepIndex] = useState(0);
+
     const [recipe, setRecipe] = useState<DetailRecipe>(defaultRecipe);
+    const [stepIndex, setStepIndex] = useState(-1);
     const [listening, setListening] = useState(false);
     const [voiceTranscript, setVoiceTranscript] = useState("");
+    const {speak, stopSpeaking} = useTextToSpeech();
+    const ttsLockRef = useRef(false);
+    const waitMs = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
+    const {startListening, stopListening} = useSpeechToText();
     const fetchRecipeDetails = useCallback(() => {
         getRecipeById(Number(params.id)).then(
             (data) => {
@@ -56,90 +67,155 @@ export default function RecipePage() {
             setRecipe(defaultRecipe);
         });
     }, []);
-    // useFocusEffect(fetchRecipeDetails);
-    const {speak, isSpeaking, stopSpeaking} = useTextToSpeech();
-    const speakStep = (stepIndex: number) => {
+    useFocusEffect(fetchRecipeDetails);
+
+    const speakStep = async (stepIndex: number, isButtonPress: boolean) => {
         console.log("Speaking step:", stepIndex);
         if (stepIndex >= 0 && stepIndex < recipe.instructions.length) {
-            // Speech.speak(recipe.instructions[stepIndex], {
-            //     language: "en-US",
-            //     rate: 0.8,
-            // });
-            speak((recipe.instructions[stepIndex])).then()
+            // Ensure STT is stopped before starting TTS, and restart afterwards.
+            if (ttsLockRef.current) return; // already speaking
+            if (!isButtonPress) {
+                ttsLockRef.current = true;
+            }
+            const text = recipe.instructions[stepIndex];
+            try {
+                setListening(false);
+                try {
+                    stopListening();
+                } catch (e) {
+                    console.error(e);
+                }
+                await speak(text);
+            } catch (err) {
+                console.error('Error during speakStep:', err);
+            } finally {
+                // small delay to allow audio focus to settle before starting STT again
+                await waitMs(150);
+                if (!isButtonPress) { // if this was triggered by a button press, we don't want to auto-restart STT
+                    setListening(true);
+                    try {
+                        startListening();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                ttsLockRef.current = false;
+
+            }
         }
     };
     useSpeechRecognitionEvent("end", () => {
-        if (listening) {
+        // only auto-restart STT if we're not in the middle of TTS
+        if (listening && !ttsLockRef.current) {
             console.log("Restarting voice interaction after speech ended");
             setTimeout(() => startVoiceInteraction(), 100);
         }
     })
-    useSpeechRecognitionEvent("result", (event) => {
+    const speechResultHandler = (event: ExpoSpeechRecognitionResultEvent) => {
         const transcript = event.results[0]?.transcript.toLowerCase();
         setVoiceTranscript(transcript)
         console.log("Recognized speech:", transcript);
-    })
-    const startVoiceInteraction = () => {
+        if (transcript.includes("next step") || transcript.includes("next")) {
+            speakNextStep()
+        } else if (transcript.includes("previous step") || transcript.includes("previous") || transcript.includes("back")) {
+            speakPreviousStep()
+        } else if (transcript.includes("repeat")) {
+            repeatStep()
+        } else if (transcript.includes("reset")) {
+            resetStep();
+        }
+    };
+    useSpeechRecognitionEvent("result", speechResultHandler)
+    const startVoiceInteraction = async () => {
         console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
-        ExpoSpeechRecognitionModule.getPermissionsAsync().then(
-            () => {
-                ExpoSpeechRecognitionModule.start({
-                    lang: "en-US",
-                    interimResults: true,
-                    continuous: false,
-                    // androidIntentOptions: {
-                    //
-                    // }
-                    androidIntentOptions: {
-                        EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
-                        EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 5000,
-                    },
-                })
-            }
-        ).catch((error) => {
-            console.error(error);
-        });
+        setStepIndex(0);
+        await speakStep(0, false);
+        startListening()
     }
+    const speakPreviousStep = async () => {
+        await stopSpeaking();
+        const isButtonPress = !listening;
+        if (stepIndex - 1 >= 0) {
+            const nextIndex = stepIndex - 1;
+            if (!isButtonPress) {
+                setListening(false);
+                try {
+                    stopListening();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            setStepIndex(nextIndex);
+            await speakStep(nextIndex, isButtonPress);
+        }
+    };
+    const speakNextStep = async () => {
+        await stopSpeaking();
+        if (stepIndex + 1 <= recipe.instructions.length - 1) {
+            const isButtonPress = !listening;
+            const nextIndex = stepIndex + 1;
+            if (!isButtonPress) {
+                setListening(false);
+                try {
+                    stopListening();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            setStepIndex(nextIndex);
+            await speakStep(nextIndex, isButtonPress);
+        }
+    };
+    const resetStep = async () => {
+        await stopSpeaking();
+        const isButtonPress = !listening;
+        if (!isButtonPress) {
+            setListening(false);
+            try {
+                stopListening();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        setStepIndex(-1);
+        // await speakStep(0, isButtonPress);
+    };
+    const repeatStep = async () => {
+        await stopSpeaking();
+        const isButtonPress = !listening;
+        if (!isButtonPress) {
+            setListening(false);
+            try {
+                stopListening();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        await speakStep(stepIndex, isButtonPress);
+    };
+    const recipe_uri = recipe.image_url ? recipe.image_url : "https://blocks.astratic.com/img/general-img-square.png";
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    title: "Recipe Details",
-                    headerLeft: () => {
-                        return <TouchableOpacity onPress={() => {
-                            console.log("Back to all recipes");
-                            router.back();
-                        }} style={{padding: 10}}>
-                            <AntDesign name="arrow-up" size={24} color="black"/>
-                        </TouchableOpacity>
-                    }
-                }
-
-                }
-            />
+            <StyledHeader title={recipe.name}/>
             <SafeAreaView>
-                <ScrollView>
-                    <Text>{recipe.name}</Text>
-                    {recipe.image_url ?
-                        <Image source={{uri: recipe.image_url}} style={{width: 200, height: 200}}/>
-                        :
-                        <Image source={require("../../assets/images/react-logo.png")}
-                               style={{width: 200, height: 200}}/>
-                    }
-                    <Text>{recipe.description}</Text>
-                    <Text>Ingredients:</Text>
+                <ScrollView className={"px-4 pb-safe-8 safe-pb-12"}>
+                    <Image source={{uri: recipe_uri}}
+                           className={"max-w-full w-full aspect-square rounded-xl p-safe-or-1"}/>
+                    <Text
+                        className={"global-text !font-italic !text-m text-on-surface text-center pb-4"}>{recipe.description}</Text>
+                    <Text className={"global-text !font-bold !text-xl text-on-surface"}>Ingredients:</Text>
                     {recipe.ingredients.map((ingredient, index) => (
-                        <Text key={index}>{ingredient}</Text>
+                        <Text key={index} className={"global-text text-on-surface pb-2"}>{ingredient}</Text>
                     ))}
-                    <Text>Instructions:</Text>
-                    {recipe.instructions.map((instruction, index) => (
-                        <Text key={index}
-                              style={{color: stepIndex == index ? 'red' : 'black'}}>{`${index + 1}. ${instruction}`}</Text>
-                    ))}
-                    <Text>Tips:</Text>
+                    <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Instructions:</Text>
+                    {recipe.instructions.map((instruction, index) => {
+                        const currentStepClass = stepIndex == index ? "text-red-500" : "text-on-surface";
+                        return (<Text key={index}
+                                      className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
+                    })}
+                    <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Tips:</Text>
                     {recipe.tips.map((tip, index) => (
-                        <Text key={index}>{`${index + 1}. ${tip}`}</Text>
+                        <Text className={"global-text text-on-surface pb-4"} key={index}>{`${index + 1}. ${tip}`}</Text>
                     ))}
                     <TouchableOpacity onPress={() => {
                         console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
@@ -151,51 +227,44 @@ export default function RecipePage() {
                             setListening(false);
                             ExpoSpeechRecognitionModule.stop();
                         }
-                    }} style={{backgroundColor: "blue", padding: 10, margin: 10, borderRadius: 5}}>
+                    }} className={"global-button !bg-primary"}>
                         <Text
-                            style={{color: "white"}}>{listening ? "stop voice interaction " : "start voice interaction"}</Text>
+                            className={"global-text text-on-primary"}>{listening ? "stop voice interaction " : "start voice interaction"}</Text>
                     </TouchableOpacity>
-                    <Text>{`Voice Transcript: ${voiceTranscript}`}</Text>
-                    <View style={{flexDirection: "row"}}>
+                    <View className={"bg-surface-container rounded-xl p-4 my-4"}>
+                        <Text className={"global-text color-on-surface"}>Step Navigations:</Text>
+                        <View className={"flex-row justify-center align-middle"}>
+                            <TouchableOpacity onPress={speakNextStep}
+                                              className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
+                                              disabled={stepIndex >= recipe.instructions.length - 1}>
+                                <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"}/>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={speakPreviousStep}
+                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}
+                                              disabled={stepIndex <= 0}>
+                                <AntDesign name="minus" size={24} className={"!color-on-secondary align-middle"}/>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={repeatStep}
+                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                <Text className={"global-text !color-on-secondary"}>Repeat</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={resetStep}
+                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                <Text className={"global-text !color-on-secondary"}>Reset</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={stopSpeaking}
+                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                <Text className={"global-text !color-on-secondary"}>Stop</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    <View className={"pb-6 mb-4"}>
                         <TouchableOpacity onPress={() => {
-                            if (stepIndex + 1 <= recipe.instructions.length - 1) {
-                                const nextIndex = stepIndex + 1;
-                                setStepIndex(nextIndex);
-                                speakStep(nextIndex);
-                            }
-                        }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
-                            <AntDesign name="plus" size={24} color="black"/>
-                        </TouchableOpacity>
-                        <Text>{stepIndex}</Text>
-                        <TouchableOpacity onPress={() => {
-                            if (stepIndex - 1 >= 0) {
-                                const nextIndex = stepIndex - 1;
-                                setStepIndex(nextIndex);
-                                speakStep(nextIndex);
-                            }
-                        }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
-                            <AntDesign name="minus" size={24} color="black"/>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => {
-                            speakStep(stepIndex);
-                        }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
-                            <Text>Repeat</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => {
-                            setStepIndex(0);
-                        }} style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
-                            <Text>Reset</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={stopSpeaking}
-                                          style={{backgroundColor: "orange", padding: 10, margin: 10, borderRadius: 5}}>
-                            <Text>Stop</Text>
+                            router.back();
+                        }} className={"global-button !bg-primary-container !p-2.5-or-safe !m-2.5-or-safe "}>
+                            <Text className={"global-text color-on-primary-container"}>Back</Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={() => {
-                        router.back();
-                    }} style={{backgroundColor: "green", padding: 10, margin: 10, borderRadius: 5}}>
-                        <Text style={{color: "white"}}>return to all recipe</Text>
-                    </TouchableOpacity>
                 </ScrollView>
             </SafeAreaView>
         </>

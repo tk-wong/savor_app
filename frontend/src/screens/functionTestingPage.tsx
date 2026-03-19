@@ -5,6 +5,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import "../../global.css";
 // import styles = module;
 import {useTextToSpeech} from "../hooks/useTextToSpeech"
+import {StyledHeader} from "@/src/components/styledHeader";
 export default function FunctionTestingPage() {
     const router = useRouter();
     const speak = () => {
@@ -18,12 +19,7 @@ export default function FunctionTestingPage() {
 
     return (
         <>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    title: "Function Testing",
-                }}
-            />
+           <StyledHeader title={"Function Testing Page"}/>
             <SafeAreaView className="flex gap-4 mx-auto">
                 <TouchableOpacity onPress={() => {
                     // for debugging
@@ -32,7 +28,7 @@ export default function FunctionTestingPage() {
                 } style={style.button}>
                     <Text>Chat page</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={()=>router.navigate("/chatHistoryPage")} style={style.button}>
+                <TouchableOpacity onPress={()=>router.navigate("/chatHistoryTestingPage")} style={style.button}>
                     <Text>Chat history page</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
@@ -42,7 +38,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                     // for debugging
-                    router.navigate("/allRecipePage")
+                    router.navigate("/allRecipeTestingPage")
                 }
 
                 } style={style.button}>
@@ -51,7 +47,7 @@ export default function FunctionTestingPage() {
                 </TouchableOpacity>
                 <Pressable onPress={() => {
                     // for debugging
-                    router.push({pathname: `/recipePage`, params: {id: 1}})
+                    router.push({pathname: `/recipeTestingPage`, params: {id: 1}})
                 }
 
                 } style={style.button}>
