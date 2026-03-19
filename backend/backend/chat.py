@@ -3,7 +3,7 @@ import uuid
 
 import flask_jwt_extended
 import requests
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from flask_jwt_extended import jwt_required
 
 from backend.models.chat_group_model import ChatGroupModel
@@ -27,7 +27,7 @@ def chat():
     if not chat_group:
         return {"message": "Chat group not found"}, 404
     try:
-        model_response = requests.post("http://localhost:5010/recipe_generation",
+        model_response = requests.post(current_app.config['RECIPE_GENERATION_URL'],
                                        json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
                                        timeout=60)
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
@@ -65,7 +65,7 @@ def chat():
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
             db.session.commit()
         try:
-            image_response = requests.post("http://localhost:5020/create_image", json={"prompt": recipe_title},
+            image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
                                            timeout=60)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             return {"message": "Image generation timed out"}, 504
