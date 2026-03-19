@@ -1,5 +1,4 @@
 import datetime
-import time
 
 
 def test_create_new_group_success(client, mock_jwt_required, mock_get_jwt_identity, mock_chat_group_model_class,
@@ -34,8 +33,7 @@ def test_create_new_group_invalid_token(client):
 def test_create_new_group_expired_token(client, app):
     with app.app_context():
         from flask_jwt_extended import create_access_token
-        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=1))
-        time.sleep(1)  # Wait for the token to expire
+        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=-1))
     response = client.get('/api/chat/group/new', headers={'Authorization': f'Bearer {expired_token}'})
     assert response.status_code == 401
     assert response.json == {'msg': 'Token has expired'}

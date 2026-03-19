@@ -1,4 +1,3 @@
-import time
 import datetime
 
 
@@ -63,8 +62,7 @@ def test_get_recipe_by_id_unauthorized(client):
 def test_get_recipe_by_id_expired_token(client, app):
     with app.app_context():
         from flask_jwt_extended import create_access_token
-        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=1))
-    time.sleep(1) # Wait for the token to expire
+        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=-1))
     recipe_id = 1
     response = client.get(f"/api/recipes/{recipe_id}", headers={"Authorization": f"Bearer {expired_token}"})
     assert response.status_code == 401

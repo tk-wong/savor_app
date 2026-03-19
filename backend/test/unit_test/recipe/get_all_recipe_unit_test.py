@@ -1,5 +1,4 @@
 import datetime
-import time
 
 
 def test_get_all_recipe(client, mock_jwt_required, mock_get_jwt_identity, mock_recipe_list, mock_session):
@@ -23,8 +22,7 @@ def test_get_all_recipe_unauthorized(client):
 def test_get_all_recipe_expired_token(client, app):
     with app.app_context():
         from flask_jwt_extended import create_access_token
-        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=1))
-        time.sleep(1) # Wait for the token to expire
+        expired_token = create_access_token(identity="1", expires_delta=datetime.timedelta(seconds=-1))
     response = client.get("/api/recipes/", headers={"Authorization": f"Bearer {expired_token}"})
     assert response.status_code == 401
     assert response.json == {"msg": "Token has expired"}
