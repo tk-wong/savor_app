@@ -17,7 +17,6 @@ def create_app(config="config.py"):
     app.register_blueprint(api_blueprint)
     from backend.jwt_manager import jwt
     jwt.init_app(app)
-    app.config['JWT_SECRET_KEY'] = app.config["JWT_SECRET_KEY"]
     return app
 
 
