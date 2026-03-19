@@ -87,7 +87,7 @@ def mock_jwt_required(mocker):
 
 @pytest.fixture()
 def mock_get_jwt_identity(mocker):
-    return mocker.patch("backend.recipe.get_jwt_identity", return_value="1")
+    return mocker.patch("flask_jwt_extended.get_jwt_identity", return_value="1")
 
 
 @pytest.fixture()
@@ -122,3 +122,9 @@ def mock_detail_ingredients(app):
     recipe_ingredient_1 = SimpleNamespace(recipe_id=1, ingredient_id=1, quantity="100g", ingredient=ingredient_list[0])
     recipe_ingredient_2 = SimpleNamespace(recipe_id=1, ingredient_id=2, quantity="200g", ingredient=ingredient_list[1])
     return [recipe_ingredient_1, recipe_ingredient_2]
+
+
+@pytest.fixture()
+def mock_chat_group_model_class(mocker, mock_session):
+    mock_chat_group_model = mocker.patch('backend.chat.ChatGroupModel')
+    return mock_chat_group_model

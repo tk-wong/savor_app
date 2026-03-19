@@ -2,9 +2,10 @@ import datetime
 import os
 import uuid
 
+import flask_jwt_extended
 import requests
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 from backend.models.chat_group_model import ChatGroupModel
 from backend.models.chat_history_model import ChatHistoryModel
@@ -18,7 +19,7 @@ chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
 def chat():
     prompt = request.json.get('prompt')
     chat_group_id = request.json.get('chat_group_id')
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     if not prompt:
         return {"message": "Prompt is required"}, 400
     if not chat_group_id:
@@ -41,7 +42,8 @@ def chat():
     prompt_type = response_data.get("prompt_type")
     if not prompt_type:
         return {"message": "Response missing prompt_type"}, 500
-    new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(get_jwt_identity()), prompt=prompt,
+    new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(flask_jwt_extended.get_jwt_identity()),
+                                        prompt=prompt,
                                         response=response_data)
     from backend.db_manager import db
     db.session.add(new_chat_history)
@@ -58,7 +60,7 @@ def chat():
         recipe_title = recipe_data.get("title")
         new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
                             direction="\n\n".join(recipe_data.get("direction", [])),
-                            create_user_id=int(get_jwt_identity()), image_url="",
+                            create_user_id=int(flask_jwt_extended.get_jwt_identity()), image_url="",
                             tips="\n\n".join(recipe_data.get("tips", [])))
         if chat_group.name == "Unnamed" and recipe_title:
             chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
@@ -89,7 +91,7 @@ def chat():
 @chat_blueprint.route('/group/new', methods=['GET'])
 @jwt_required()
 def create_new_group():
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     new_group = ChatGroupModel(create_user_id=user_id)
     from backend.db_manager import db
     db.session.add(new_group)
@@ -100,7 +102,7 @@ def create_new_group():
 @chat_blueprint.route('/group/all', methods=['GET'])
 @jwt_required()
 def get_all_groups():
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     chat_groups = ChatGroupModel.query.filter_by(create_user_id=user_id).all()
     last_chat_histories: dict[int, datetime.datetime] = {
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
@@ -115,7 +117,7 @@ def get_all_groups():
 @chat_blueprint.route('/group/<int:group_id>/history', methods=['GET'])
 @jwt_required()
 def get_chat_history(group_id):
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     chat_group = ChatGroupModel.query.filter_by(id=group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404

@@ -1,5 +1,6 @@
+import flask_jwt_extended
 from flask import Blueprint
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 from backend.models.ingredient_model import Ingredient
 from backend.models.recipe_ingredient_model import RecipeIngredient
@@ -11,7 +12,7 @@ recipe_blueprint = Blueprint('recipe', __name__, url_prefix='/recipes')
 @recipe_blueprint.route('/', methods=['GET'])
 @jwt_required()
 def get_all_recipe():
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     from backend.db_manager import db
     all_recipe = db.session.query(Recipe.id, Recipe.title, Recipe.image_url).filter_by(create_user_id=user_id).all()
     return {"recipes": [{'id': recipe_id, 'title': title, 'image_url': image_url} for recipe_id, title, image_url in
@@ -21,7 +22,7 @@ def get_all_recipe():
 @recipe_blueprint.route('/<int:recipe_id>', methods=['GET'])
 @jwt_required()
 def get_recipe_by_id(recipe_id):
-    user_id = int(get_jwt_identity())
+    user_id = int(flask_jwt_extended.get_jwt_identity())
     recipe = Recipe.query.filter_by(id=recipe_id, create_user_id=user_id).first()
     if not recipe:
         return {"message": "Recipe not found"}, 404
