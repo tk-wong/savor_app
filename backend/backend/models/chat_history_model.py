@@ -18,4 +18,4 @@ class ChatHistoryModel(db.Model):
                                  back_populates="chat_histories")
 
     def __repr__(self):
-        return f'<ChatHistory user_id: {self.user_id}, prompt: {self.prompt}, message: {self.message}, timestamp: {self.timestamp}, id: {self.id}>'
+        return f'<ChatHistory id: {self.id}, user_id: {self.user_id}, prompt: {self.prompt}, response: {self.response}, timestamp: {self.timestamp}>'

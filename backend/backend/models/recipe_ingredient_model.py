@@ -9,4 +9,4 @@ class RecipeIngredient(db.Model):
     quantity: db.Column = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
-        return f'<RecipeIngredient recipe_id: {self.recipe_id}, ingredient_id: {self.ingredient_id}, quantity: {self.quantity}, id: {self.id}>'
+        return f'<RecipeIngredient id: {self.id}, recipe_id: {self.recipe_id}, ingredient_id: {self.ingredient_id}, quantity: {self.quantity}>'

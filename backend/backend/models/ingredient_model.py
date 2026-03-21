@@ -7,4 +7,4 @@ class Ingredient(db.Model):
     name: db.Column = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
-        return f'<Ingredient {self.name}, quantity: {self.quantity}, id: {self.id}>'
+        return f'<Ingredient id: {self.id},name: {self.name}>'

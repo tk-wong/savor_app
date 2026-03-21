@@ -14,7 +14,7 @@ class User(db.Model):
 
 
     def __repr__(self):
-        return f'<User {self.username}, Email: {self.email}, id: {self.id}>'
+        return f'<User id: {self.id}, username: {self.username}, email: {self.email}>'
 
 # @login_manager.user_loader
 # def load_user(user_id):

@@ -6,7 +6,7 @@ def create_app(config="config.py"):
     app = Flask(__name__, static_folder='static', static_url_path='/api/static')
     app.config.from_pyfile(config)
     # print(app.config['SQLALCHEMY_DATABASE_URI'])
-    from .db_manager import db
+    from backend.db_manager import db
     db.init_app(app)
     if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
         create_database(app.config['SQLALCHEMY_DATABASE_URI'])
