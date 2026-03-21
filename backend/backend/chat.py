@@ -23,7 +23,7 @@ def chat():
     if not prompt:
         return {"message": "Prompt is required"}, 400
     if not chat_group_id:
-        return {"message": "Chat group ID is required"}, 400
+        return {"message": "Chat group id is required"}, 400
     chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404
