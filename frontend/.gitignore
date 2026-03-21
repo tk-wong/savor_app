@@ -48,3 +48,6 @@ app-example
 # ide settings
 .vscode/
 .idea/
+
+# coverage test
+coverage
