@@ -2,7 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import { ApiRequestError, mapApiError } from "../api/apiRequestError";
 import apiClient from "../api/client";
-import { login, createUser } from "../api/auth";
+import { login, createUser } from "@/src/api";
 import {
   sendMessage,
   getAllChatGroups,
