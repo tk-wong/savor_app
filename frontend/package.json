@@ -18,6 +18,26 @@
     ],
     "moduleNameMapper" : {
       "^react$": "<rootDir>/node_modules/react/index.js"
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/api/**/*.{ts,tsx}",
+      "src/screens/{allRecipePage,chatHistoryPage,createUserPage,loginPage}.tsx",
+      "src/app/_layout.tsx",
+      "!src/api/index.ts",
+      "!src/api/client.ts",
+      "!src/**/*.d.ts",
+      "!src/__tests__/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 100,
+        "functions": 100,
+        "lines": 100,
+        "statements": 100
+      }
     }
   },
   "dependencies": {
