@@ -6,21 +6,22 @@ import {Alert, Platform, useColorScheme, View} from "react-native";
 import {
     Actions,
     ActionsProps,
-    Bubble, Day,
+    Bubble,
+    Day,
     GiftedChat,
     IMessage,
     MessageTextProps,
     Send,
     SendProps
 } from 'react-native-gifted-chat';
-import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {getChatHistoryByGroupId, getNewChatGroup, sendMessage} from "../api/chat";
 import {ApiRequestError} from "../api/apiRequestError";
 import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
 import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
 import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {Stack, useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
+import {useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
 import {ChatResponse} from "@/src/types/response";
 import {cssInterop} from "nativewind";
@@ -157,8 +158,9 @@ export default function ChatPage() {
                     Alert.alert("Error", "Received invalid response from server. Please try again.");
                     return;
                 }
+                let response_text: string = "";
                 if (response.prompt_type === "question") {
-                    const message_text = response.answer;
+                    response_text = response.answer;
                 } else if (response.prompt_type === "recipe") {
 
                     const recipe = response.recipe;
@@ -167,7 +169,7 @@ export default function ChatPage() {
                     const recipe_ingredients = recipe.ingredients.join("\n");
                     const recipe_instructions = recipe.instructions.join("\n");
                     const recipe_tips = recipe.tips.join("\n");
-                    const messageText = `Here's a recipe for you:\n\n
+                    response_text = `Here's a recipe for you:\n\n
                     Title: ${recipe_title}\n\n
                     Description:\n${recipe_description}\n\n
                     Ingredients:\n${recipe_ingredients}\n\n
@@ -182,12 +184,13 @@ export default function ChatPage() {
 
                 const botMessage: IMessage = {
                     _id: Math.random(),
-                    text: messageText,
+                    text: response_text,
                     createdAt: new Date(),
                     user: {
                         _id: "bot",
                         name: 'SavorBot',
                     },
+                    image : response.prompt_type === "recipe" ? response.recipe.image_url ?? undefined : undefined,
                 }
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
