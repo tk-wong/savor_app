@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { Alert } from 'react-native';
 
 const apiClient = axios.create({
-  baseURL: "http://192.168.0.155:5000/api",
+  baseURL: process.env.EXPO_PUBLIC_BACKEND_URL,
   timeout: 60000, // 60 seconds timeout
   headers: { "Content-Type": "application/json" },
 });

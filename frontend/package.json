@@ -24,7 +24,7 @@
     ],
     "collectCoverageFrom": [
       "src/api/**/*.{ts,tsx}",
-      "src/screens/{allRecipePage,chatHistoryPage,createUserPage,loginPage}.tsx",
+      "src/screens/{allRecipePage,chatHistoryPage,chatPage,createUserPage,loginPage,recipePage}.tsx",
       "src/app/_layout.tsx",
       "!src/api/index.ts",
       "!src/api/client.ts",

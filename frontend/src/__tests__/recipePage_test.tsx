@@ -1,14 +1,439 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
-import RecipePageRoute from "../app/recipePage";
+import { Image } from "react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import RecipePage from "../screens/recipePage";
+import { getRecipeById } from "../api/recipe";
+import { useTextToSpeech } from "../hooks/useTextToSpeech";
+import { useSpeechToText } from "../hooks/useSpeechToText";
 
-jest.mock("../screens/recipePage", () => ({
-  __esModule: true,
-  default: () => null,
+jest.mock("../api/recipe", () => ({
+  getRecipeById: jest.fn(),
 }));
 
-describe("Recipe page route", () => {
-  it("renders recipe page route without crashing", () => {
-    expect(() => render(<RecipePageRoute />)).not.toThrow();
+jest.mock("../hooks/useTextToSpeech", () => ({
+  useTextToSpeech: jest.fn(),
+}));
+
+jest.mock("../hooks/useSpeechToText", () => ({
+  useSpeechToText: jest.fn(),
+}));
+
+const mockRouterBack = jest.fn();
+const mockUseLocalSearchParams = jest.fn();
+
+jest.mock("expo-router", () => ({
+  router: {
+    back: (...args: unknown[]) => mockRouterBack(...args),
+  },
+  useLocalSearchParams: () => mockUseLocalSearchParams(),
+  useFocusEffect: (effect: () => void) => {
+    const ReactLocal = require("react");
+    ReactLocal.useEffect(() => {
+      effect();
+    }, [effect]);
+  },
+}));
+
+const mockSpeechCallbacks: Record<string, ((event?: any) => void) | undefined> = {};
+const mockSpeechRecognitionStop = jest.fn();
+
+jest.mock("expo-speech-recognition", () => ({
+  ExpoSpeechRecognitionModule: {
+    stop: (...args: unknown[]) => mockSpeechRecognitionStop(...args),
+  },
+  useSpeechRecognitionEvent: (eventName: string, callback: (event?: any) => void) => {
+    mockSpeechCallbacks[eventName] = callback;
+  },
+}));
+
+jest.mock("../components/styledHeader", () => ({
+  StyledHeader: ({ title }: { title: string }) => {
+    const ReactLocal = require("react");
+    const { Text } = require("react-native");
+    return ReactLocal.createElement(Text, { testID: "styled-header" }, title);
+  },
+}));
+
+jest.mock("@expo/vector-icons/AntDesign", () => ({
+  __esModule: true,
+  default: ({ onPress, name }: { onPress?: () => void; name: string }) => {
+    const ReactLocal = require("react");
+    const { Pressable, Text } = require("react-native");
+    return ReactLocal.createElement(
+        Pressable,
+        { testID: `ant-${name}`, onPress },
+        ReactLocal.createElement(Text, null, name),
+    );
+  },
+}));
+
+jest.mock("react-native-safe-area-context", () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => {
+    const ReactLocal = require("react");
+    const { View } = require("react-native");
+    return ReactLocal.createElement(View, { testID: "safe-area" }, children);
+  },
+}));
+
+describe("RecipePage", () => {
+  const mockedGetRecipeById = getRecipeById as jest.MockedFunction<typeof getRecipeById>;
+  const mockedUseTextToSpeech = useTextToSpeech as jest.Mock;
+  const mockedUseSpeechToText = useSpeechToText as jest.Mock;
+  const mockSpeak = jest.fn();
+  const mockStopSpeaking = jest.fn();
+  const mockStartListening = jest.fn();
+  const mockStopListening = jest.fn();
+  const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+  const recipePayload = {
+    recipe: {
+      id: 101,
+      name: "Test Recipe",
+      description: "Delicious food",
+      image_url: "https://cdn.test/recipe.png",
+      ingredients: ["Eggs", "Flour"],
+      instructions: ["Step one", "Step two"],
+      tips: ["Be patient"],
+    },
+  } as any;
+
+  const triggerSpeechResult = async (transcript: string) => {
+    await act(async () => {
+      const cb = mockSpeechCallbacks.result;
+      cb?.({ results: [{ transcript }] });
+    });
+  };
+
+  const triggerSpeechEnd = async () => {
+    await act(async () => {
+      const cb = mockSpeechCallbacks.end;
+      cb?.();
+    });
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.keys(mockSpeechCallbacks).forEach((key) => {
+      delete mockSpeechCallbacks[key];
+    });
+    mockUseLocalSearchParams.mockReturnValue({ id: "101" });
+    mockedGetRecipeById.mockResolvedValue(recipePayload);
+    mockSpeak.mockResolvedValue(undefined);
+    mockStopSpeaking.mockResolvedValue(undefined);
+    mockedUseTextToSpeech.mockReturnValue({
+      speak: mockSpeak,
+      stopSpeaking: mockStopSpeaking,
+    });
+    mockedUseSpeechToText.mockReturnValue({
+      startListening: mockStartListening,
+      stopListening: mockStopListening,
+    });
+    jest.useRealTimers();
+  });
+
+  it("fetches and renders recipe details with remote image", async () => {
+    const { UNSAFE_getAllByType } = render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(mockedGetRecipeById).toHaveBeenCalledWith(101);
+      expect(screen.getByText("Test Recipe")).toBeTruthy();
+      expect(screen.getByText("1. Step one")).toBeTruthy();
+      expect(screen.getByText("2. Step two")).toBeTruthy();
+    });
+
+    const images = UNSAFE_getAllByType(Image);
+    expect(images[0].props.source).toEqual({ uri: "https://cdn.test/recipe.png" });
+  });
+
+  it("falls back to default recipe data and placeholder image when fetch fails", async () => {
+    mockedGetRecipeById.mockRejectedValueOnce(new Error("network"));
+    const { UNSAFE_getAllByType } = render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("Recipe not found")).toBeTruthy();
+    });
+
+    const images = UNSAFE_getAllByType(Image);
+    expect(images[0].props.source).toEqual({
+      uri: "https://blocks.astratic.com/img/general-img-square.png",
+    });
+  });
+
+  it("starts and stops voice interaction from the main toggle", async () => {
+    render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("start voice interaction")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("start voice interaction"));
+
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledWith("Step one");
+      expect(mockStartListening).toHaveBeenCalled();
+    });
+
+    fireEvent.press(screen.getByText("stop voice interaction "));
+
+    expect(mockSpeechRecognitionStop).toHaveBeenCalled();
+  });
+
+  it("handles speech result commands for next, previous/back, repeat, and reset", async () => {
+    jest.useFakeTimers();
+    render(React.createElement(RecipePage));
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledWith("Step one");
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await triggerSpeechResult("next");
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledWith("Step two");
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    const beforeEndNext = mockSpeak.mock.calls.length;
+    await triggerSpeechResult("next");
+    expect(mockSpeak.mock.calls.length).toBe(beforeEndNext);
+
+    await triggerSpeechResult("previous step");
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledWith("Step one");
+    });
+
+    await triggerSpeechResult("repeat");
+    await waitFor(() => {
+      expect(mockStopSpeaking).toHaveBeenCalled();
+    });
+
+    await triggerSpeechResult("reset");
+    await waitFor(() => {
+      expect(mockStopSpeaking).toHaveBeenCalled();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await triggerSpeechResult("back");
+    await triggerSpeechResult("unrelated words");
+  });
+
+  it("supports navigation controls and back button", async () => {
+    render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("Repeat")).toBeTruthy();
+      expect(screen.getByText("Reset")).toBeTruthy();
+      expect(screen.getByText("Stop")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("Repeat"));
+    fireEvent.press(screen.getByText("Reset"));
+    fireEvent.press(screen.getByText("Stop"));
+    fireEvent.press(screen.getByTestId("ant-plus"));
+    fireEvent.press(screen.getByTestId("ant-minus"));
+    fireEvent.press(screen.getByText("Back"));
+
+    expect(mockRouterBack).toHaveBeenCalled();
+    expect(mockStopSpeaking).toHaveBeenCalled();
+  });
+
+  it("handles button-based next navigation and stops at the last step", async () => {
+    jest.useFakeTimers();
+    render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("1. Step one")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId("ant-plus"));
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    fireEvent.press(screen.getByTestId("ant-plus"));
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    fireEvent.press(screen.getByTestId("ant-minus"));
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    fireEvent.press(screen.getByTestId("ant-plus"));
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    const beforeBoundary = mockSpeak.mock.calls.length;
+    fireEvent.press(screen.getByTestId("ant-plus"));
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    expect(mockSpeak.mock.calls.length).toBe(beforeBoundary);
+  });
+
+  it("restarts voice interaction on speech end only when listening and unlocked", async () => {
+    jest.useFakeTimers();
+    render(React.createElement(RecipePage));
+
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledWith("Step one");
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    const beforeEndCalls = mockSpeak.mock.calls.length;
+    await triggerSpeechEnd();
+
+    act(() => {
+      jest.advanceTimersByTime(110);
+    });
+
+    await waitFor(() => {
+      expect(mockSpeak.mock.calls.length).toBeGreaterThan(beforeEndCalls);
+    });
+  });
+
+  it("logs speech errors when speak fails and when auto-restart listening fails", async () => {
+    jest.useFakeTimers();
+    const speakError = new Error("tts-fail");
+    mockSpeak.mockRejectedValueOnce(speakError);
+    mockStartListening.mockImplementationOnce(() => {
+      throw new Error("stt-restart-fail");
+    });
+
+    render(React.createElement(RecipePage));
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    expect(errorSpy).toHaveBeenCalledWith("Error during speakStep:", speakError);
+  });
+
+  it("handles non-button voice commands while listening and catches stopListening errors", async () => {
+    jest.useFakeTimers();
+    mockStopListening.mockImplementation(() => {
+      throw new Error("stop-fail");
+    });
+
+    render(React.createElement(RecipePage));
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("stop voice interaction ")).toBeTruthy();
+    });
+
+    await triggerSpeechResult("next step");
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await triggerSpeechResult("previous");
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await triggerSpeechResult("repeat");
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await triggerSpeechResult("reset");
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("handles speech/listening errors and lock guard branches without crashing", async () => {
+    jest.useFakeTimers();
+
+    let resolveSpeak: (() => void) | null = null;
+    mockSpeak
+        .mockImplementationOnce(
+            () =>
+                new Promise<void>((resolve) => {
+                  resolveSpeak = resolve;
+                }),
+        )
+        .mockResolvedValue(undefined);
+
+    mockStopListening.mockImplementation(() => {
+      throw new Error("stop listening failed");
+    });
+    mockStartListening.mockImplementationOnce(() => {
+      throw new Error("start listening failed");
+    });
+
+    render(React.createElement(RecipePage));
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await waitFor(() => {
+      expect(mockSpeak).toHaveBeenCalledTimes(1);
+    });
+
+    // While first TTS call is locked/pending, this should hit the ttsLockRef guard.
+    await triggerSpeechResult("next");
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      resolveSpeak?.();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    mockSpeak.mockRejectedValueOnce(new Error("tts failure"));
+    fireEvent.press(screen.getByTestId("ant-plus"));
+
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalled();
+    });
+
+    // Exercise end handler no-restart branch when not listening.
+    const before = mockSpeak.mock.calls.length;
+    await triggerSpeechEnd();
+    act(() => {
+      jest.advanceTimersByTime(120);
+    });
+    expect(mockSpeak.mock.calls.length).toBe(before);
+  });
+
+  afterAll(() => {
+    logSpy.mockRestore();
+    // Keep console.error mocked for jest.setup.js teardown compatibility.
   });
 });
+
+
+
+
+
+
+
+

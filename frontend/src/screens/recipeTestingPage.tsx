@@ -187,7 +187,8 @@ export default function RecipePage() {
         }
         await speakStep(stepIndex, isButtonPress);
     };
-    const recipe_uri = recipe.image_url ? recipe.image_url : "https://blocks.astratic.com/img/general-img-square.png";
+    const placeholder_image = "https://blocks.astratic.com/img/general-img-square.png";
+    const recipe_uri = recipe.image_url ? process.env.EXPO_PUBLIC_BACKEND_URL + recipe.image_url : placeholder_image
     return (
         <>
             <StyledHeader title={recipe.name}/>
