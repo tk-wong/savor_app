@@ -18,6 +18,7 @@ import {ApiRequestError} from "../api/apiRequestError";
 import {getAllRecipes} from "../api/recipe";
 import {Recipe} from "../types";
 import {StyledHeader} from "@/src/components/styledHeader";
+import {string} from "postcss-selector-parser";
 
 export default function AllRecipePage() {
     const headerHeight = useHeaderHeight();
@@ -38,7 +39,7 @@ export default function AllRecipePage() {
 interface RecipeCardItem {
     id: number;
     name: string;
-    image?: ImageSourcePropType;
+    image: ImageSourcePropType;
 }
 
 function RecipeCard() {
@@ -53,11 +54,14 @@ function RecipeCard() {
         console.log("Fetching all recipes");
         const placeholderImage = "https://blocks.astratic.com/img/general-img-landscape.png";
         getAllRecipes().then((data) => {
-            const formattedRecipes = data.recipes.map((recipe: Recipe) => ({
-                id: recipe.id,
-                name: recipe.title,
-                image: {uri: recipe.image_url ?? placeholderImage}, // Convert image URL to ImageSourcePropType, use placeholder if null
-            }));
+            const formattedRecipes = data.recipes.map((recipe: Recipe) => {
+                const image_uri  = recipe.image_url ? process.env.EXPO_PUBLIC_BACKEND_URL + recipe.image_url : placeholderImage;
+                return {
+                    id: recipe.id,
+                    name: recipe.title,
+                    image: {uri:image_uri},
+                }
+            });
             setRecipeList(formattedRecipes);
         }).catch((error: ApiRequestError) => {
             console.error("Error fetching recipes:", error.message);
