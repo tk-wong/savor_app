@@ -25,9 +25,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", secret_key) # generate a random one if not 
 jwt_secret_key = secrets.token_hex(32)
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", jwt_secret_key)  # generate a random one if not set
 
-recipe_generation_host = os.getenv("RECIPE_GENERATION_HOST", "localhost")
-recipe_generation_port = os.getenv("RECIPE_GENERATION_PORT", "5010")
-RECIPE_GENERATION_URL = f"http://{recipe_generation_host}:{recipe_generation_port}/recipe_generation"
+recipe_generation_host = os.getenv("AI_COOKING_AGENT_HOST", "localhost")
+recipe_generation_port = os.getenv("AI_COOKING_AGENT_PORT", "5010")
+AI_COOKING_AGENT_URL = f"http://{recipe_generation_host}:{recipe_generation_port}/recipe_generation"
 
 image_generation_host = os.getenv("IMAGE_GENERATION_HOST", "localhost")
 image_generation_port = os.getenv("IMAGE_GENERATION_PORT", "5020")

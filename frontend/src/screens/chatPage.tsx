@@ -101,7 +101,8 @@ export default function ChatPage() {
                         user: {
                             _id: "bot",
                             name: 'SavorBot',
-                        }
+                        },
+                        image: msg.image_url ?? null
                     }
                 ]));
                 const fullMessageList = formattedMessages.flat();

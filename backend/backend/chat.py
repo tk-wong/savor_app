@@ -28,11 +28,11 @@ def chat():
     if not chat_group:
         return {"message": "Chat group not found"}, 404
     try:
-        model_response = requests.post(current_app.config['RECIPE_GENERATION_URL'],
+        model_response = requests.post(current_app.config['AI_COOKING_AGENT_URL'],
                                        json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
                                        timeout=60)
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        return {"message": "Model response timed out"}, 504
+        return {"message": "AI cooking agent response timed out"}, 504
     if model_response.status_code != 200:
         return {"message": "Error generating response"}, 500
     try:
@@ -41,7 +41,7 @@ def chat():
         return {"message": "Invalid response from model"}, 500
     prompt_type = response_data.get("prompt_type")
     if not prompt_type:
-        return {"message": "Response missing prompt_type"}, 500
+        return {"message": "Invalid response from model"}, 500
     new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(flask_jwt_extended.get_jwt_identity()),
                                         prompt=prompt,
                                         response=response_data)
@@ -52,13 +52,13 @@ def chat():
         return _handle_question_response(chat_group, prompt, response_data)
     elif prompt_type == "recipe":
         return _handle_recipe_response(chat_group, new_chat_history, response_data)
-    return {"message": "Error generating response"}, 500
+    return {"message": "Invalid response from model"}, 500
 
 
 def _handle_question_response(chat_group: Any | None, prompt, response_data) -> tuple[Any, int]:
     if chat_group.name == "Unnamed":
         from backend.db_manager import db
-        chat_group.name = prompt[:20] + "..." if len(prompt) > 20 else prompt
+        chat_group.name = prompt[:255] + "..." if len(prompt) > 255 else prompt
         db.session.commit()
     return response_data, 200
 
@@ -74,7 +74,7 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
                         create_user_id=int(flask_jwt_extended.get_jwt_identity()), image_url="",
                         tips="\n\n".join(recipe_data.get("tips", [])))
     if chat_group.name == "Unnamed" and recipe_title:
-        chat_group.name = recipe_title[:20] + "..." if len(recipe_title) > 20 else recipe_title
+        chat_group.name = recipe_title[:252] + "..." if len(recipe_title) > 255 else recipe_title
         from backend.db_manager import db
         db.session.commit()
     try:

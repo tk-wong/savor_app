@@ -14,7 +14,7 @@ def test_handle_question_response(client, mock_jwt_required, mock_get_jwt_identi
     result, status_code = _handle_question_response(chat_group, prompt, response_data)
     assert status_code == 200
     assert result == response_data
-    assert chat_group.name == "What is the best way..."
+    assert chat_group.name == "What is the best way to cook pasta?"
 
 
 def test_handle_question_response_named_group(client, mock_jwt_required, mock_get_jwt_identity,
@@ -81,7 +81,7 @@ def test_handle_recipe_response_unnamed_group_long_title(app, mocker, client, mo
     new_chat_history = MagicMock()
     chat_group.name = "Unnamed"
     mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
-    response_data = {"recipe": {"title": "test" * 5 + "123"}}
+    response_data = {"recipe": {"title": "test" * 63 + "123456"}}
     mocker.patch("requests.post", return_value=MagicMock(status_code=200))
     mocker.patch("backend.chat.open")
     mocker.patch("os.path.exists", return_value=True)
@@ -89,7 +89,7 @@ def test_handle_recipe_response_unnamed_group_long_title(app, mocker, client, mo
     with app.app_context():
         result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
     assert status_code == 200
-    assert chat_group.name == "test" * 5 + "..."
+    assert chat_group.name == "test" * 63 + "..."
 
 
 def test_handle_recipe_response_image_generation_timeout(app, mocker, client, mock_jwt_required, mock_get_jwt_identity,
