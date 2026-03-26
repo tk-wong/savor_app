@@ -1,4 +1,5 @@
 import os
+import json
 
 import pytest
 from dotenv import load_dotenv
@@ -54,43 +55,56 @@ def sample_user(app):
         return user
 
 
-def test_index(client):
-    response = client.get("/user")
-    assert response.status_code == 200
-    assert response.get_json() == {'message': 'User endpoint'}
+def test_create_user(client):
+    email = "example@abc.com"
+    username = "Example User"
+    password = "testing"
+    response = client.post("/api/user/create", data=json.dumps({
+        "email": email,
+        "username": username,
+        "password": password
+    }), content_type='application/json')
+    assert response.status_code == 201
+    assert response.get_json() == {"message": f"User {username} created successfully!"}
 
+def test_create_user_existing_email(client, sample_user):
+    email = "example@abc.com"
+    username = "Example User"
+    password = "testing"
+    response = client.post("/api/user/create", data=json.dumps({
+        "email": email,
+        "username": username,
+        "password": password
+    }), content_type='application/json')
+    assert response.status_code == 409
+    assert response.get_json() == {"message": "User with this email already exists"}
 
-def test_login(client, sample_user):
-    response = client.post("/user/login", data={"email": "example@abc.com", "password": "testing"})
-    assert response.status_code == 200
-    assert response.get_json() == {'message': 'Welcome back, Example User!'}
-
-
-def test_invalid_user(client, sample_user):
-    response = client.post("/user/login", data={"email": "notexist@abc.com", "password": "testing"})
-    assert response.status_code == 401
-    assert response.get_json() == {'message': 'Invalid credentials'}
-
-
-def test_invalid_password(client, sample_user):
-    response = client.post("/user/login", data={"email": "example@abc.com", "password": "wrong_password"})
-    assert response.status_code == 401
-    assert response.get_json() == {'message': 'Invalid credentials'}
-
-
-def test_missing_email(client):
-    response = client.post("/user/login", data={"password": "testing"})
+def test_create_user_missing_email(client):
+    username = "Example User"
+    password = "testing"
+    response = client.post("/api/user/create", data=json.dumps({
+        "username": username,
+        "password": password
+    }), content_type='application/json')
     assert response.status_code == 400
-    assert response.get_json() == {'message': 'Email and password are required'}
+    assert response.get_json() == {"message": "Email, username, and password are required"}
 
-
-def test_missing_password(client):
-    response = client.post("/user/login", data={"email": "example@abc.com"})
+def test_create_user_missing_username(client):
+    email = "example@abc.com"
+    password = "testing"
+    response = client.post("/api/user/create", data=json.dumps({
+        "email": email,
+        "password": password
+    }), content_type='application/json')
     assert response.status_code == 400
-    assert response.get_json() == {'message': 'Email and password are required'}
+    assert response.get_json() == {"message": "Email, username, and password are required"}
 
-
-def test_SQL_injection_attempt(client, sample_user):
-    response = client.post("/user/login", data={"email": "example@abc.com", "password": "' OR '1'='1"})
-    assert response.status_code == 401
-    assert response.get_json() == {'message': 'Invalid credentials'}
+def test_create_user_missing_password(client):
+    email = "example@abc.com"
+    username = "Example User"
+    response = client.post("/api/user/create", data=json.dumps({
+        "email": email,
+        "username": username,
+    }), content_type='application/json')
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "Email, username, and password are required"}
