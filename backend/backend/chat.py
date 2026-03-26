@@ -58,7 +58,7 @@ def chat():
 def _handle_question_response(chat_group: Any | None, prompt, response_data) -> tuple[Any, int]:
     if chat_group.name == "Unnamed":
         from backend.db_manager import db
-        chat_group.name = prompt[:255] + "..." if len(prompt) > 255 else prompt
+        chat_group.name = prompt[:252] + "..." if len(prompt) > 255 else prompt
         db.session.commit()
     return response_data, 200
 
@@ -67,16 +67,8 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     Any, int]:
     recipe_data = response_data.get("recipe")
     if not recipe_data:
-        return {"message": "Response missing recipe data"}, 500
+        return {"message": "Invalid response from model"}, 500
     recipe_title = recipe_data.get("title")
-    new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
-                        direction="\n\n".join(recipe_data.get("direction", [])),
-                        create_user_id=int(flask_jwt_extended.get_jwt_identity()), image_url="",
-                        tips="\n\n".join(recipe_data.get("tips", [])))
-    if chat_group.name == "Unnamed" and recipe_title:
-        chat_group.name = recipe_title[:252] + "..." if len(recipe_title) > 255 else recipe_title
-        from backend.db_manager import db
-        db.session.commit()
     try:
         image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
                                        timeout=60)
@@ -89,6 +81,12 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     image_url = f"static/images/{uuid.uuid4()}.png"
     with open(image_url, "wb") as f:
         f.write(image_response.content)
+    new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
+                        direction="\n\n".join(recipe_data.get("direction", [])),
+                        create_user_id=int(flask_jwt_extended.get_jwt_identity()),
+                        tips="\n\n".join(recipe_data.get("tips", [])), image_url=image_url)
+    if chat_group.name == "Unnamed" and recipe_title:
+        chat_group.name = recipe_title[:252] + "..." if len(recipe_title) > 255 else recipe_title
     response_data["recipe"]["image_url"] = image_url
     response_data["recipe"]["id"] = new_recipe.id
     new_chat_history.image_url = image_url

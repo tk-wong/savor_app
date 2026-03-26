@@ -55,7 +55,7 @@ def test_handle_recipe_response_no_recipe_data(client, mock_jwt_required, mock_g
     from backend.chat import _handle_recipe_response
     result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
     assert status_code == 500
-    assert result == {"message": "Response missing recipe data"}
+    assert result == {"message": "Invalid response from model"}
 
 
 def test_handle_recipe_response_unnamed_group(app, mocker, client, mock_jwt_required, mock_get_jwt_identity,
@@ -205,7 +205,7 @@ def test_chat_timeout(mocker, client, mock_jwt_required, mock_get_jwt_identity, 
     mocker.patch("requests.post", side_effect=requests.exceptions.Timeout)
     response = client.post("/api/chat/", json={"chat_group_id": 1, "prompt": "test prompt"})
     assert response.status_code == 504
-    assert response.json == {"message": "Model response timed out"}
+    assert response.json == {"message": "AI cooking agent response timed out"}
 
 
 def test_chat_connection_error(mocker, client, mock_jwt_required, mock_get_jwt_identity, mock_chat_group_model_class,
@@ -214,7 +214,7 @@ def test_chat_connection_error(mocker, client, mock_jwt_required, mock_get_jwt_i
     mocker.patch("requests.post", side_effect=requests.exceptions.ConnectionError)
     response = client.post("/api/chat/", json={"chat_group_id": 1, "prompt": "test prompt"})
     assert response.status_code == 504
-    assert response.json == {"message": "Model response timed out"}
+    assert response.json == {"message": "AI cooking agent response timed out"}
 
 
 def test_chat_status_code_not_success(mocker, client, mock_jwt_required, mock_get_jwt_identity,
@@ -247,7 +247,7 @@ def test_chat_no_prompt_type(mocker, client, mock_jwt_required, mock_get_jwt_ide
     response = client.post("/api/chat/", json={"chat_group_id": 1, "prompt": "test prompt"})
 
     assert response.status_code == 500
-    assert response.json == {"message": "Response missing prompt_type"}
+    assert response.json == {"message": "Invalid response from model"}
 
 
 def test_chat_invalid_prompt_type(mocker, client, mock_jwt_required, mock_get_jwt_identity, mock_chat_group_model_class,
@@ -258,7 +258,7 @@ def test_chat_invalid_prompt_type(mocker, client, mock_jwt_required, mock_get_jw
     response = client.post("/api/chat/", json={"chat_group_id": 1, "prompt": "test prompt"})
 
     assert response.status_code == 500
-    assert response.json == {"message": "Error generating response"}
+    assert response.json == {"message": "Invalid response from model"}
 
 
 def test_chat_invalid_method(client):
