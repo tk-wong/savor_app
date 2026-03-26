@@ -1,7 +1,8 @@
 import json
 
 
-def test_create_user(client):
+def test_create_user(client, mock_user_query):
+    mock_user_query.filter_by.return_value.first.return_value = None
     email = "example@abc.com"
     username = "Example User"
     password = "testing"
@@ -13,7 +14,9 @@ def test_create_user(client):
     assert response.status_code == 201
     assert response.get_json() == {"message": f"User {username} created successfully!"}
 
-def test_create_user_existing_email(client, sample_user):
+
+def test_create_user_existing_email(client, mock_user_query, mock_user):
+    mock_user_query.filter_by.return_value.first.return_value = mock_user
     email = "example@abc.com"
     username = "Example User"
     password = "testing"
@@ -25,6 +28,7 @@ def test_create_user_existing_email(client, sample_user):
     assert response.status_code == 409
     assert response.get_json() == {"message": "User with this email already exists"}
 
+
 def test_create_user_missing_email(client):
     username = "Example User"
     password = "testing"
@@ -35,6 +39,7 @@ def test_create_user_missing_email(client):
     assert response.status_code == 400
     assert response.get_json() == {"message": "Email, username, and password are required"}
 
+
 def test_create_user_missing_username(client):
     email = "example@abc.com"
     password = "testing"
@@ -44,6 +49,7 @@ def test_create_user_missing_username(client):
     }), content_type='application/json')
     assert response.status_code == 400
     assert response.get_json() == {"message": "Email, username, and password are required"}
+
 
 def test_create_user_missing_password(client):
     email = "example@abc.com"
