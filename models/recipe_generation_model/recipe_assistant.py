@@ -65,11 +65,9 @@ class RecipeAssistant:
         lower_request = request.lower()
         create_recipe = any(word in lower_request for word in recipe_create_words)
         ask_question = any(word in lower_request for word in question_words)
-        if create_recipe and ask_question:
-            return "question"  # ambiguous, prefer question
-        if create_recipe:
+        if create_recipe and not ask_question:
             return "recipe"
-        if ask_question:
+        if ask_question and not create_recipe:
             return "question"
         result = classifier_chain.invoke({"request": request, "chat_history": self.get_conversation_history(
             session_id)})  # cannot decide based on keywords, use model to classify
