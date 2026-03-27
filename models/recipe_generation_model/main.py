@@ -1,4 +1,5 @@
 import os
+import json
 from logging.config import dictConfig
 
 import flask
@@ -57,7 +58,10 @@ def main():
         if not request or not user_id or not group_id:
             return {"error": "prompt, user_id, and group_id are required"}, 400
         result = recipe_assistant.handle_request(request, user_id, group_id)
-        return flask.Response(result, mimetype="application/json")
+        try:
+            return flask.jsonify(json.loads(result))
+        except (TypeError, json.JSONDecodeError):
+            return flask.Response(result, mimetype="application/json"), 500
 
     app.run(port=5010, debug=True)
 

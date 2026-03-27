@@ -43,10 +43,10 @@ class FakeRunnableWithMessageHistory:
         self.input_messages_key = input_messages_key
         self.history_messages_key = history_messages_key
 
-    def stream(self, payload, config):
+    def invoke(self, payload, config):
         assert payload["request"]
         assert "session_id" in config["configurable"]
-        return iter([f"{self.chain}:chunk1", f"{self.chain}:chunk2"])
+        return f"{self.chain}:final"
 
 
 def make_assistant(monkeypatch):
@@ -122,7 +122,7 @@ def test_classify_falls_back_to_classifier_chain(monkeypatch):
     ]
 
 
-def test_handle_request_streams_recipe_strategy(monkeypatch):
+def test_handle_request_returns_recipe_strategy_response(monkeypatch):
     assistant = make_assistant(monkeypatch)
     recipe_strategy = FakeStrategy("recipe_chain")
     question_strategy = FakeStrategy("question_chain")
@@ -136,14 +136,14 @@ def test_handle_request_streams_recipe_strategy(monkeypatch):
 
     monkeypatch.setattr(module, "RunnableWithMessageHistory", FakeRunnableWithMessageHistory)
 
-    chunks = list(assistant.handle_request("create a salad", user_id=11, group_id=5))
+    result = assistant.handle_request("create a salad", user_id=11, group_id=5)
 
-    assert chunks == ["recipe_chain:chunk1", "recipe_chain:chunk2"]
+    assert result == "recipe_chain:final"
     assert len(recipe_strategy.calls) == 1
     assert len(question_strategy.calls) == 0
 
 
-def test_handle_request_streams_question_strategy(monkeypatch):
+def test_handle_request_returns_question_strategy_response(monkeypatch):
     assistant = make_assistant(monkeypatch)
     recipe_strategy = FakeStrategy("recipe_chain")
     question_strategy = FakeStrategy("question_chain")
@@ -157,9 +157,9 @@ def test_handle_request_streams_question_strategy(monkeypatch):
 
     monkeypatch.setattr(module, "RunnableWithMessageHistory", FakeRunnableWithMessageHistory)
 
-    chunks = list(assistant.handle_request("what can I do with basil?", user_id=2, group_id=9))
+    result = assistant.handle_request("what can I do with basil?", user_id=2, group_id=9)
 
-    assert chunks == ["question_chain:chunk1", "question_chain:chunk2"]
+    assert result == "question_chain:final"
     assert len(recipe_strategy.calls) == 0
     assert len(question_strategy.calls) == 1
 

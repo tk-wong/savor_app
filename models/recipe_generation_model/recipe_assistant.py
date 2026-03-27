@@ -91,15 +91,15 @@ class RecipeAssistant:
                 history_messages_key="chat_history",
             )
 
-            result = chain_with_history.stream({"request": request},
-                                               config={"configurable": {"session_id": session_id}},
-                                               )
-            for chunk in result:
-                yield chunk
+            result = chain_with_history.invoke(
+                {"request": request},
+                config={"configurable": {"session_id": session_id}},
+            )
+            return result.content if hasattr(result, "content") else str(result)
         except Exception as e:
             # self.app.logger.error(f"Error handling request: {e}\n Traceback: {e.__traceback__}")
-            yield "{\"error\": \"An error occurred while processing the request.\"}"
-            raise e
+            self.app.logger.error(f"Error handling request: {e}")
+            return "{\"error\": \"An error occurred while processing the request.\"}"
 
     def get_conversation_history(self, session_id):
         history = PostgresChatMessageHistory(
