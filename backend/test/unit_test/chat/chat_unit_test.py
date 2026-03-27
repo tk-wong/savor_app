@@ -284,3 +284,210 @@ def test_chat_invalid_token(client):
     response = client.post("/api/chat/", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 422
     assert response.json == {"msg": "Not enough segments"}
+
+
+# Ingredient Tests
+def test_handle_recipe_response_with_existing_ingredient(app, mocker, client, mock_jwt_required,
+                                                         mock_get_jwt_identity,
+                                                         mock_chat_group_model_class, mock_session):
+    """Test handling recipe response with an ingredient that already exists in the database"""
+    chat_group = MagicMock()
+    new_chat_history = MagicMock()
+    chat_group.name = "Existing Group"
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
+
+    # Mock existing ingredient
+    existing_ingredient = MagicMock()
+    existing_ingredient.id = 1
+    existing_ingredient.name = "flour"
+
+    response_data = {
+        "recipe": {
+            "title": "bread",
+            "description": "test bread",
+            "direction": ["Step 1", "Step 2"],
+            "tips": ["Tip 1"],
+            "ingredients": [{"name": "flour", "ingredient_name": "flour", "quantity": "500g"}]
+        }
+    }
+
+    mocker.patch("requests.post", return_value=MagicMock(status_code=200))
+    mocker.patch("backend.chat.open")
+    mocker.patch("os.path.exists", return_value=True)
+
+    mock_ingredient_class = mocker.patch("backend.models.ingredient_model.Ingredient")
+    mock_ingredient_class.query.filter_by.return_value.first.return_value = existing_ingredient
+
+    mocker.patch("backend.chat.RecipeIngredient")
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+    assert status_code == 200
+    assert mock_ingredient_class.query.filter_by.called
+
+
+def test_handle_recipe_response_with_new_ingredient(app, mocker, client, mock_jwt_required,
+                                                    mock_get_jwt_identity,
+                                                    mock_chat_group_model_class, mock_session):
+    """Test handling recipe response with a new ingredient that needs to be created"""
+    chat_group = MagicMock()
+    new_chat_history = MagicMock()
+    chat_group.name = "Existing Group"
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
+
+    # Mock new ingredient (doesn't exist yet)
+    new_ingredient = MagicMock()
+    new_ingredient.id = 2
+    new_ingredient.name = "sugar"
+
+    response_data = {
+        "recipe": {
+            "title": "cake",
+            "description": "test cake",
+            "direction": ["Step 1"],
+            "tips": ["Tip 1"],
+            "ingredients": [{"name": "sugar", "ingredient_name": "sugar", "quantity": "200g"}]
+        }
+    }
+
+    mocker.patch("requests.post", return_value=MagicMock(status_code=200))
+    mocker.patch("backend.chat.open")
+    mocker.patch("os.path.exists", return_value=True)
+
+    mock_ingredient_class = mocker.patch("backend.models.ingredient_model.Ingredient")
+    mock_ingredient_class.query.filter_by.return_value.first.return_value = None  # Ingredient doesn't exist
+    mock_ingredient_class.return_value.save.return_value = new_ingredient
+
+    mocker.patch("backend.chat.RecipeIngredient")
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+    assert status_code == 200
+    assert mock_ingredient_class.called
+
+
+def test_handle_recipe_response_with_multiple_ingredients(app, mocker, client, mock_jwt_required,
+                                                          mock_get_jwt_identity,
+                                                          mock_chat_group_model_class, mock_session):
+    """Test handling recipe response with multiple ingredients"""
+    chat_group = MagicMock()
+    new_chat_history = MagicMock()
+    chat_group.name = "Existing Group"
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
+
+    # Mock multiple ingredients
+    ingredient1 = MagicMock()
+    ingredient1.id = 1
+    ingredient1.name = "flour"
+
+    ingredient2 = MagicMock()
+    ingredient2.id = 2
+    ingredient2.name = "eggs"
+
+    response_data = {
+        "recipe": {
+            "title": "omelette",
+            "description": "test omelette",
+            "direction": ["Step 1", "Step 2"],
+            "tips": ["Tip 1"],
+            "ingredients": [
+                {"name": "flour", "ingredient_name": "flour", "quantity": "100g"},
+                {"name": "eggs", "ingredient_name": "eggs", "quantity": "3"}
+            ]
+        }
+    }
+
+    mocker.patch("requests.post", return_value=MagicMock(status_code=200))
+    mocker.patch("backend.chat.open")
+    mocker.patch("os.path.exists", return_value=True)
+
+    mock_ingredient_class = mocker.patch("backend.models.ingredient_model.Ingredient")
+
+    def ingredient_filter_side_effect(name):
+        side_effects = {
+            "flour": MagicMock(first=MagicMock(return_value=ingredient1)),
+            "eggs": MagicMock(first=MagicMock(return_value=ingredient2))
+        }
+        return side_effects.get(name, MagicMock(first=MagicMock(return_value=None)))
+
+    mock_ingredient_class.query.filter_by = ingredient_filter_side_effect
+
+    mocker.patch("backend.chat.RecipeIngredient")
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+    assert status_code == 200
+
+
+def test_handle_recipe_response_empty_ingredients(app, mocker, client, mock_jwt_required,
+                                                  mock_get_jwt_identity,
+                                                  mock_chat_group_model_class, mock_session):
+    """Test handling recipe response with no ingredients"""
+    chat_group = MagicMock()
+    new_chat_history = MagicMock()
+    chat_group.name = "Existing Group"
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
+
+    response_data = {
+        "recipe": {
+            "title": "water",
+            "description": "just water",
+            "direction": ["Step 1"],
+            "tips": [],
+            "ingredients": []  # No ingredients
+        }
+    }
+
+    mocker.patch("requests.post", return_value=MagicMock(status_code=200))
+    mocker.patch("backend.chat.open")
+    mocker.patch("os.path.exists", return_value=True)
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+    assert status_code == 200
+
+
+def test_handle_recipe_response_ingredient_with_quantity(app, mocker, client, mock_jwt_required,
+                                                         mock_get_jwt_identity,
+                                                         mock_chat_group_model_class, mock_session):
+    """Test that ingredient quantities are properly stored in RecipeIngredient"""
+    chat_group = MagicMock()
+    new_chat_history = MagicMock()
+    chat_group.name = "Existing Group"
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = chat_group
+
+    ingredient = MagicMock()
+    ingredient.id = 1
+    ingredient.name = "butter"
+
+    response_data = {
+        "recipe": {
+            "title": "pastry",
+            "description": "buttery pastry",
+            "direction": ["Step 1"],
+            "tips": [],
+            "ingredients": [{"name": "butter", "ingredient_name": "butter", "quantity": "250g"}]
+        }
+    }
+
+    mocker.patch("requests.post", return_value=MagicMock(status_code=200))
+    mocker.patch("backend.chat.open")
+    mocker.patch("os.path.exists", return_value=True)
+
+    mock_ingredient_class = mocker.patch("backend.models.ingredient_model.Ingredient")
+    mock_ingredient_class.query.filter_by.return_value.first.return_value = ingredient
+
+    mock_recipe_ingredient = mocker.patch("backend.chat.RecipeIngredient")
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+    assert status_code == 200
+    # Verify RecipeIngredient was called with proper quantity
+    assert mock_recipe_ingredient.called
+
+

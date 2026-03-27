@@ -9,6 +9,7 @@ from flask_jwt_extended import jwt_required
 
 from backend.models.chat_group_model import ChatGroupModel
 from backend.models.chat_history_model import ChatHistoryModel
+from backend.models.recipe_ingredient_model import RecipeIngredient
 from backend.models.recipe_model import Recipe
 
 chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
@@ -85,6 +86,13 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
                         direction="\n\n".join(recipe_data.get("direction", [])),
                         create_user_id=int(flask_jwt_extended.get_jwt_identity()),
                         tips="\n\n".join(recipe_data.get("tips", [])), image_url=image_url)
+    for ingredient in recipe_data.get("ingredients", []):
+        from backend.models.ingredient_model import Ingredient
+        ingredient_id = Ingredient.query.filter_by(name=ingredient.get("name")).first()
+        if not ingredient_id:
+            new_ingredient =  Ingredient(name=ingredient.get("ingredient_name")).save()
+            ingredient_id = new_ingredient.id
+        RecipeIngredient(recipe_id=new_recipe.id,ingredient_id=ingredient_id, quentity=ingredient.get("quantity")).save()
     if chat_group.name == "Unnamed" and recipe_title:
         chat_group.name = recipe_title[:252] + "..." if len(recipe_title) > 255 else recipe_title
     response_data["recipe"]["image_url"] = image_url
