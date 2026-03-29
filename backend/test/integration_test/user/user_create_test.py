@@ -1,8 +1,7 @@
 import json
 
 
-def test_create_user(client, mock_user_query):
-    mock_user_query.filter_by.return_value.first.return_value = None
+def test_create_user(client):
     email = "example@abc.com"
     username = "Example User"
     password = "testing"
@@ -15,8 +14,7 @@ def test_create_user(client, mock_user_query):
     assert response.get_json() == {"message": f"User {username} created successfully!"}
 
 
-def test_create_user_existing_email(client, mock_user_query, mock_user):
-    mock_user_query.filter_by.return_value.first.return_value = mock_user
+def test_create_user_existing_email(client, sample_user):
     email = "example@abc.com"
     username = "Example User"
     password = "testing"
@@ -60,3 +58,4 @@ def test_create_user_missing_password(client):
     }), content_type='application/json')
     assert response.status_code == 400
     assert response.get_json() == {"message": "Email, username, and password are required"}
+

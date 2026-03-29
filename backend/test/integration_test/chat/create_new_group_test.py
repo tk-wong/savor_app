@@ -1,16 +1,12 @@
 import datetime
 
 
-def test_create_new_group_success(client, mock_jwt_required, mock_get_jwt_identity, mock_chat_group_model_class,
-                                  mock_session):
-    mock_chat_group_model_class.return_value = mock_chat_group_model_class
-    mock_chat_group_model_class.id = 1
-    response = client.get('/api/chat/group/new')
+def test_create_new_group_success(client, sample_login):
+    access_token = sample_login.get("user").get("access_token")
+    response = client.get('/api/chat/group/new', headers={'Authorization': f'Bearer {access_token}'})
+
     assert response.status_code == 200
     assert response.json == {"message": "New chat group created", "group_id": 1}
-    mock_chat_group_model_class.assert_called_once_with(create_user_id=1)
-    mock_session.add.assert_called_once_with(mock_chat_group_model_class)
-    mock_session.commit.assert_called_once()
 
 
 def test_create_new_group_invalid_method(client):

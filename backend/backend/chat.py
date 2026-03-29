@@ -121,7 +121,7 @@ def create_new_group():
 def get_all_groups():
     user_id = int(flask_jwt_extended.get_jwt_identity())
     chat_groups = ChatGroupModel.query.filter_by(create_user_id=user_id).all()
-    if chat_groups is None:
+    if not chat_groups:
         return {"chat_groups": []}, 200
     last_chat_histories = {
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(

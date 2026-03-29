@@ -1,20 +1,32 @@
 import datetime
 
 
-def test_get_all_recipe(client, mock_jwt_required, mock_get_jwt_identity, mock_recipe_list, mock_session):
-    mock_session.query.return_value.filter_by.return_value.all.return_value = mock_recipe_list
-    response = client.get("/api/recipes/")
-    print(response.json)
-    recipe_list = [{'id': id, 'title': title, 'image_url': image_url} for id, title, image_url in mock_recipe_list]
+def _auth_headers(sample_login):
+    return {"Authorization": f"Bearer {sample_login['user']['access_token']}"}
+
+
+def test_get_all_recipe(client, sample_login, sample_recipe):
+    response = client.get("/api/recipes/", headers=_auth_headers(sample_login))
+    recipe_list = [
+        {"id": 1, "title": "Recipe 1", "image_url": "https://example.com/recipe1.jpg"},
+        {"id": 2, "title": "Recipe 2", "image_url": "https://example.com/recipe2.jpg"},
+    ]
     assert response.status_code == 200
     assert response.json == {"recipes": recipe_list}
 
 
-def test_get_all_recipe_no_recipes(client, mock_jwt_required, mock_get_jwt_identity, mock_session):
-    mock_session.query.return_value.filter_by.return_value.all.return_value = []
-    response = client.get("/api/recipes/")
+def test_get_all_recipe_no_recipes(client, sample_login):
+    response = client.get("/api/recipes/", headers=_auth_headers(sample_login))
     assert response.status_code == 200
     assert response.json == {"recipes": []}
+
+
+def test_get_all_recipe_filters_other_users_recipe(client, sample_login, sample_recipe, sample_recipe_other_user):
+    response = client.get("/api/recipes/", headers=_auth_headers(sample_login))
+    assert response.status_code == 200
+    assert len(response.json["recipes"]) == 2
+    titles = [recipe["title"] for recipe in response.json["recipes"]]
+    assert "Other User Recipe" not in titles
 
 
 def test_get_all_recipe_unauthorized(client):

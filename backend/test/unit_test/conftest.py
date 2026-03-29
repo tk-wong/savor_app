@@ -38,7 +38,7 @@ def mock_session(mocker):
     session = mocker.MagicMock(name="mock_session")
     query = mocker.MagicMock(name="mock_query")
     session.query.return_value = query
-    for method in ['filter_by', 'first', 'all', 'get', 'join', 'limit', 'offset', 'group_by']:
+    for method in ['filter', 'filter_by', 'first', 'all', 'get', 'join', 'limit', 'offset', 'group_by']:
         getattr(query, method).return_value = query
 
     query.first.return_value = None
@@ -116,9 +116,9 @@ def mock_detail_recipe(app):
 @pytest.fixture()
 def mock_detail_ingredients(app):
     ingredient_list = [Ingredient(id=1, name="Ingredient 1"), Ingredient(id=2, name="Ingredient 2")]
-    recipe_ingredient_1 = SimpleNamespace(recipe_id=1, ingredient_id=1, quantity="100g", ingredient=ingredient_list[0])
-    recipe_ingredient_2 = SimpleNamespace(recipe_id=1, ingredient_id=2, quantity="200g", ingredient=ingredient_list[1])
-    return [recipe_ingredient_1, recipe_ingredient_2]
+    recipe_ingredient_1 = SimpleNamespace(recipe_id=1, ingredient_id=1, quantity="100g")
+    recipe_ingredient_2 = SimpleNamespace(recipe_id=1, ingredient_id=2, quantity="200g")
+    return [(recipe_ingredient_1, ingredient_list[0]), (recipe_ingredient_2, ingredient_list[1])]
 
 
 @pytest.fixture()
