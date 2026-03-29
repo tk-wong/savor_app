@@ -67,51 +67,54 @@ def chat():
     prompt = request.json.get('prompt')
     chat_group_id = request.json.get('chat_group_id')
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.request.received", user_id=user_id, chat_group_id=chat_group_id,
+    _log("info", "Receive request for /chat", user_id=user_id, chat_group_id=chat_group_id,
          prompt_len=len(prompt) if isinstance(prompt, str) else 0)
     if not prompt:
-        _log("warning", "chat.request.validation_failed", reason="missing_prompt", user_id=user_id,
+        _log("warning", "Fail the validate the parameter", reason="missing_prompt", user_id=user_id,
              chat_group_id=chat_group_id)
         return {"message": "Prompt is required"}, 400
     if not chat_group_id:
-        _log("warning", "chat.request.validation_failed", reason="missing_chat_group_id", user_id=user_id)
+        _log("warning", "Fail the validate the parameter", reason="missing_chat_group_id", user_id=user_id)
         return {"message": "Chat group id is required"}, 400
     chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
     if not chat_group:
-        _log("warning", "chat.group.not_found", user_id=user_id, chat_group_id=chat_group_id)
+        _log("warning", "Chat group not found", user_id=user_id, chat_group_id=chat_group_id)
         return {"message": "Chat group not found"}, 404
-    _log("info", "chat.group.loaded", user_id=user_id, chat_group_id=chat_group_id, group_name=chat_group.name)
+    _log("info", "Loaded chat group", user_id=user_id, chat_group_id=chat_group_id, group_name=chat_group.name)
     if current_app.config.get("MOCK_AI_MODELS", False):
-        _log("info", "chat.ai.mock_response.started", user_id=user_id, chat_group_id=chat_group_id)
+        _log("info", "Start creating mock response", user_id=user_id, chat_group_id=chat_group_id)
         response_data = _build_mock_ai_response(prompt)
-        _log("info", "chat.ai.mock_response.completed", user_id=user_id, chat_group_id=chat_group_id)
+        _log("info", "Completed creating mock response", user_id=user_id, chat_group_id=chat_group_id)
     else:
-        _log("info", "chat.ai.request.started", user_id=user_id, chat_group_id=chat_group_id)
+        _log("info", "Start sending request to AI cooking agent", user_id=user_id, chat_group_id=chat_group_id,
+             prompt=prompt)
         try:
             model_response = requests.post(current_app.config['AI_COOKING_AGENT_URL'],
                                            json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
                                            timeout=60)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            _log("error", "chat.ai.request.failed", user_id=user_id, chat_group_id=chat_group_id,
+            _log("error", "Fail to send request to AI cooking agent", user_id=user_id, chat_group_id=chat_group_id,
                  reason="timeout_or_connection_error")
             return {"message": "AI cooking agent response timed out"}, 504
-        _log("info", "chat.ai.request.completed", user_id=user_id, chat_group_id=chat_group_id,
+        _log("info", "chat request completed", user_id=user_id, chat_group_id=chat_group_id,
              status_code=model_response.status_code)
         if model_response.status_code != 200:
-            _log("error", "chat.ai.response.invalid_status", user_id=user_id, chat_group_id=chat_group_id,
+            _log("error", "AI cooking agent invalid status", user_id=user_id, chat_group_id=chat_group_id,
                  status_code=model_response.status_code)
             return {"message": "Error generating response"}, 500
         try:
             response_data = model_response.json()
         except requests.exceptions.JSONDecodeError:
-            _log("error", "chat.ai.response.invalid_json", user_id=user_id, chat_group_id=chat_group_id)
+            _log("error", "AI cooking agent invalid JSON", user_id=user_id, chat_group_id=chat_group_id)
             return {"message": "Invalid response from model"}, 500
-        _log("info", "chat.ai.response.parsed", user_id=user_id, chat_group_id=chat_group_id)
+        _log("info", "Parsed the response from AI cooking agent", user_id=user_id, chat_group_id=chat_group_id)
     prompt_type = response_data.get("prompt_type")
     if not prompt_type:
-        _log("error", "chat.ai.response.missing_prompt_type", user_id=user_id, chat_group_id=chat_group_id)
+        _log("error", "AI cooking agent missing prompt_type", user_id=user_id, chat_group_id=chat_group_id,
+             json=response_data)
         return {"message": "Invalid response from model"}, 500
-    _log("info", "chat.history.write.started", user_id=user_id, chat_group_id=chat_group_id, prompt_type=prompt_type)
+    _log("info", "Writing chat history to database", user_id=user_id, chat_group_id=chat_group_id,
+         prompt_type=prompt_type)
     new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(flask_jwt_extended.get_jwt_identity()),
                                         prompt=prompt,
                                         response=response_data,
@@ -119,71 +122,72 @@ def chat():
     from backend.db_manager import db
     db.session.add(new_chat_history)
     db.session.commit()
-    _log("info", "chat.history.write.completed", user_id=user_id, chat_group_id=chat_group_id,
+    _log("info", "Complete writing chat history to database", user_id=user_id, chat_group_id=chat_group_id,
          chat_history_id=new_chat_history.id)
     if prompt_type == "question":
-        _log("info", "chat.response.question.handling", user_id=user_id, chat_group_id=chat_group_id)
+        _log("info", "Handling question response", user_id=user_id, chat_group_id=chat_group_id)
         return _handle_question_response(chat_group, prompt, response_data)
     elif prompt_type == "recipe":
-        _log("info", "chat.response.recipe.handling", user_id=user_id, chat_group_id=chat_group_id,
+        _log("info", "Handling recipe response", user_id=user_id, chat_group_id=chat_group_id,
              chat_history_id=new_chat_history.id)
         return _handle_recipe_response(chat_group, new_chat_history, response_data)
-    _log("error", "chat.ai.response.unsupported_prompt_type", user_id=user_id, chat_group_id=chat_group_id,
+    _log("error", "Invalid prompt type from AI cooking agent", user_id=user_id, chat_group_id=chat_group_id,
          prompt_type=prompt_type, duration_ms=int((perf_counter() - started_at) * 1000))
     return {"message": "Invalid response from model"}, 500
 
 
 def _handle_question_response(chat_group: Any | None, prompt, response_data) -> tuple[Any, int]:
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.question_response.started", user_id=user_id, chat_group_id=chat_group.id)
+    _log("info", "Start handling question response", user_id=user_id, chat_group_id=chat_group.id)
     if chat_group.name == "Unnamed":
         from backend.db_manager import db
         chat_group.name = prompt[:252] + "..." if len(prompt) > 255 else prompt
         db.session.commit()
-        _log("info", "chat.group.renamed_from_prompt", user_id=user_id, chat_group_id=chat_group.id,
+        _log("info", "Renamed unnamed chat group from prompt", user_id=user_id, chat_group_id=chat_group.id,
              new_name=chat_group.name)
-    _log("info", "chat.question_response.completed", user_id=user_id, chat_group_id=chat_group.id)
+    _log("info", "Completed handling question response", user_id=user_id, chat_group_id=chat_group.id)
     return response_data, 200
 
 
 def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistoryModel, response_data) -> tuple[
     Any, int]:
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.recipe_response.started", user_id=user_id, chat_group_id=chat_group.id,
+    _log("info", "Start handling recipe response", user_id=user_id, chat_group_id=chat_group.id,
          chat_history_id=new_chat_history.id)
     recipe_data = response_data.get("recipe")
     if not recipe_data:
-        _log("error", "chat.recipe_response.missing_recipe_payload", user_id=user_id, chat_group_id=chat_group.id)
+        _log("error", "Recipe payload is missing", user_id=user_id, chat_group_id=chat_group.id)
         return {"message": "Invalid response from model"}, 500
     recipe_title = recipe_data.get("title")
     image_dir = Path(current_app.static_folder) / "images"
     if current_app.config.get("MOCK_AI_MODELS", False):
-        _log("info", "chat.image.mock_generation.used", user_id=user_id, chat_group_id=chat_group.id)
+        _log("info", "Using mock image response", user_id=user_id, chat_group_id=chat_group.id)
         image_url = current_app.config.get("MOCK_IMAGE_URL", f"{current_app.static_url_path}/images/temp.png")
     else:
-        _log("info", "chat.image.generation.started", user_id=user_id, chat_group_id=chat_group.id)
+        _log("info", "Start generating recipe image", user_id=user_id, chat_group_id=chat_group.id)
         try:
             image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
                                            timeout=60)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            _log("error", "chat.image.generation.failed", user_id=user_id, chat_group_id=chat_group.id,
+            _log("error", "Fail to generate recipe image", user_id=user_id, chat_group_id=chat_group.id,
                  reason="timeout_or_connection_error")
             return {"message": "Image generation timed out"}, 504
         if image_response.status_code != 200:
-            _log("error", "chat.image.generation.invalid_status", user_id=user_id, chat_group_id=chat_group.id,
+            _log("error", "Recipe image generation invalid status", user_id=user_id, chat_group_id=chat_group.id,
                  status_code=image_response.status_code)
             return {"message": "Error generating image from the image generation model"}, 500
         if not image_dir.exists():
             image_dir.mkdir(parents=True)
-            _log("info", "chat.image.storage_dir.created", path=str(image_dir))
+            _log("info", "Created image storage directory", path=str(image_dir))
         image_filename = f"{uuid.uuid4()}.png"
         image_file_path = image_dir / image_filename
         image_url = f"{current_app.static_url_path}/images/{image_filename}"
         with open(image_file_path, "wb") as f:
             f.write(image_response.content)
-        _log("info", "chat.image.generated", user_id=user_id, chat_group_id=chat_group.id,
+        _log("info", "Generated recipe image", user_id=user_id, chat_group_id=chat_group.id,
              image_url=image_url, file_path=str(image_file_path))
-    _log("info", "chat.recipe.write.started", user_id=user_id, chat_group_id=chat_group.id, recipe_title=recipe_title)
+    _log("info", "Start writing recipe to database", user_id=user_id, chat_group_id=chat_group.id,
+         recipe_title=recipe_title)
     new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
                         direction="\n\n".join(recipe_data.get("direction", [])),
                         create_user_id=int(flask_jwt_extended.get_jwt_identity()),
@@ -191,12 +195,12 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     from backend.db_manager import db
     db.session.add(new_recipe)
     db.session.flush()
-    _log("info", "chat.recipe.write.flushed", user_id=user_id, chat_group_id=chat_group.id, recipe_id=new_recipe.id)
+    _log("info", "Recipe write flushed", user_id=user_id, chat_group_id=chat_group.id, recipe_id=new_recipe.id)
     for ingredient in recipe_data.get("ingredients", []):
         from backend.models.ingredient_model import Ingredient
         ingredient_name = ingredient.get("ingredient_name") or ingredient.get("name")
         if not ingredient_name:
-            _log("warning", "chat.recipe_ingredient.skipped", user_id=user_id, chat_group_id=chat_group.id,
+            _log("warning", "Skipped recipe ingredient", user_id=user_id, chat_group_id=chat_group.id,
                  reason="missing_ingredient_name")
             continue
         ingredient_row = Ingredient.query.filter_by(name=ingredient_name).first()
@@ -204,23 +208,23 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
             ingredient_row = Ingredient(name=ingredient_name)
             db.session.add(ingredient_row)
             db.session.flush()
-            _log("info", "chat.ingredient.created", user_id=user_id, ingredient_id=ingredient_row.id,
+            _log("info", "Created ingredient", user_id=user_id, ingredient_id=ingredient_row.id,
                  ingredient_name=ingredient_name)
         recipe_ingredient = RecipeIngredient(recipe_id=new_recipe.id, ingredient_id=ingredient_row.id,
                                              quantity=ingredient.get("quantity") or "")
         db.session.add(recipe_ingredient)
-        _log("info", "chat.recipe_ingredient.added", user_id=user_id, recipe_id=new_recipe.id,
+        _log("info", "Added recipe ingredient", user_id=user_id, recipe_id=new_recipe.id,
              ingredient_id=ingredient_row.id)
     if chat_group.name == "Unnamed" and recipe_title:
         chat_group.name = recipe_title[:252] + "..." if len(recipe_title) > 255 else recipe_title
-        _log("info", "chat.group.renamed_from_recipe", user_id=user_id, chat_group_id=chat_group.id,
+        _log("info", "Renamed unnamed chat group from recipe title", user_id=user_id, chat_group_id=chat_group.id,
              new_name=chat_group.name)
     response_data["recipe"]["image_url"] = image_url
     response_data["recipe"]["id"] = new_recipe.id
     new_chat_history.image_url = image_url
     new_recipe.image_url = image_url
     db.session.commit()
-    _log("info", "chat.recipe_response.completed", user_id=user_id, chat_group_id=chat_group.id,
+    _log("info", "Completed handling recipe response", user_id=user_id, chat_group_id=chat_group.id,
          recipe_id=new_recipe.id)
     return response_data, 200
 
@@ -229,12 +233,12 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
 @jwt_required()
 def create_new_group():
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.group_create.started", user_id=user_id)
+    _log("info", "Receive request for /chat/group/new", user_id=user_id)
     new_group = ChatGroupModel(create_user_id=user_id)
     from backend.db_manager import db
     db.session.add(new_group)
     db.session.commit()
-    _log("info", "chat.group_create.completed", user_id=user_id, chat_group_id=new_group.id)
+    _log("info", "Completed creating new chat group", user_id=user_id, chat_group_id=new_group.id)
     return {"message": "New chat group created", "group_id": new_group.id}, 200
 
 
@@ -242,10 +246,10 @@ def create_new_group():
 @jwt_required()
 def get_all_groups():
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.group_list.started", user_id=user_id)
+    _log("info", "Receive request for /chat/group/all", user_id=user_id)
     chat_groups = ChatGroupModel.query.filter_by(create_user_id=user_id).all()
     if not chat_groups:
-        _log("info", "chat.group_list.completed", user_id=user_id, group_count=0)
+        _log("info", "Completed listing chat groups", user_id=user_id, group_count=0)
         return {"chat_groups": []}, 200
     last_chat_histories = {
         group.id: ChatHistoryModel.query.filter_by(chat_group_id=group.id).order_by(
@@ -254,7 +258,7 @@ def get_all_groups():
                     "last_edit": last_chat_histories.get(group.id).timestamp.isoformat()} for
                    group in chat_groups if last_chat_histories.get(
             group.id) is not None]  # avoid returning groups without any chat history
-    _log("info", "chat.group_list.completed", user_id=user_id, group_count=len(groups_data))
+    _log("info", "Completed listing chat groups", user_id=user_id, group_count=len(groups_data))
     return {"chat_groups": groups_data}, 200
 
 
@@ -262,13 +266,13 @@ def get_all_groups():
 @jwt_required()
 def get_chat_history(group_id):
     user_id = int(flask_jwt_extended.get_jwt_identity())
-    _log("info", "chat.history_read.started", user_id=user_id, chat_group_id=group_id)
+    _log("info", "Receive request for /chat/group/<group_id>/history", user_id=user_id, chat_group_id=group_id)
     chat_group = ChatGroupModel.query.filter_by(id=group_id).first()
     if not chat_group:
-        _log("warning", "chat.history_read.group_not_found", user_id=user_id, chat_group_id=group_id)
+        _log("warning", "Chat group not found for history request", user_id=user_id, chat_group_id=group_id)
         return {"message": "Chat group not found"}, 404
     if chat_group.create_user_id != user_id:
-        _log("warning", "chat.history_read.unauthorized", user_id=user_id, chat_group_id=group_id)
+        _log("warning", "Unauthorized access to chat history", user_id=user_id, chat_group_id=group_id)
         return {"message": "Unauthorized access to chat group"}, 403
     chat_history = ChatHistoryModel.query.filter_by(chat_group_id=group_id).order_by(
         ChatHistoryModel.timestamp.desc()).all()
@@ -276,6 +280,6 @@ def get_chat_history(group_id):
         {"id": history.id, "prompt": history.prompt, "response": history.response, "image_url": history.image_url,
          "timestamp": history.timestamp.isoformat() if history.timestamp else None} for
         history in chat_history]
-    _log("info", "chat.history_read.completed", user_id=user_id, chat_group_id=group_id,
+    _log("info", "Completed reading chat history", user_id=user_id, chat_group_id=group_id,
          history_count=len(history_data))
     return {"chat_history": history_data}, 200
