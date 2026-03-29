@@ -15,6 +15,29 @@ from backend.models.recipe_model import Recipe
 chat_blueprint = Blueprint('chat', __name__, url_prefix='/chat')
 
 
+def _build_mock_ai_response(prompt: str) -> dict[str, Any]:
+    prompt_lower = prompt.lower()
+    recipe_hints = ["recipe", "cook", "bake", "dish", "meal"]
+    if any(hint in prompt_lower for hint in recipe_hints):
+        return {
+            "prompt_type": "recipe",
+            "recipe": {
+                "title": "Mock Recipe",
+                "description": f"Mock response for: {prompt}",
+                "direction": ["Prepare ingredients", "Cook for 20 minutes", "Serve warm"],
+                "tips": ["Adjust seasoning to taste"],
+                "ingredients": [
+                    {"name": "salt", "ingredient_name": "salt", "quantity": "1 tsp"},
+                    {"name": "olive oil", "ingredient_name": "olive oil", "quantity": "1 tbsp"},
+                ],
+            },
+        }
+    return {
+        "prompt_type": "question",
+        "response": f"[MOCK] {prompt}",
+    }
+
+
 @chat_blueprint.route('/', methods=['POST'])
 @jwt_required()
 def chat():
@@ -28,18 +51,21 @@ def chat():
     chat_group = ChatGroupModel.query.filter_by(id=chat_group_id).first()
     if not chat_group:
         return {"message": "Chat group not found"}, 404
-    try:
-        model_response = requests.post(current_app.config['AI_COOKING_AGENT_URL'],
-                                       json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
-                                       timeout=60)
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        return {"message": "AI cooking agent response timed out"}, 504
-    if model_response.status_code != 200:
-        return {"message": "Error generating response"}, 500
-    try:
-        response_data = model_response.json()
-    except requests.exceptions.JSONDecodeError:
-        return {"message": "Invalid response from model"}, 500
+    if current_app.config.get("MOCK_AI_MODELS", False):
+        response_data = _build_mock_ai_response(prompt)
+    else:
+        try:
+            model_response = requests.post(current_app.config['AI_COOKING_AGENT_URL'],
+                                           json={"prompt": prompt, "user_id": user_id, "group_id": chat_group_id},
+                                           timeout=60)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            return {"message": "AI cooking agent response timed out"}, 504
+        if model_response.status_code != 200:
+            return {"message": "Error generating response"}, 500
+        try:
+            response_data = model_response.json()
+        except requests.exceptions.JSONDecodeError:
+            return {"message": "Invalid response from model"}, 500
     prompt_type = response_data.get("prompt_type")
     if not prompt_type:
         return {"message": "Invalid response from model"}, 500
@@ -70,18 +96,21 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     if not recipe_data:
         return {"message": "Invalid response from model"}, 500
     recipe_title = recipe_data.get("title")
-    try:
-        image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
-                                       timeout=60)
-    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-        return {"message": "Image generation timed out"}, 504
-    if image_response.status_code != 200:
-        return {"message": "Error generating image from the image generation model"}, 500
-    if not os.path.exists("static/images"):
-        os.makedirs("static/images")
-    image_url = f"static/images/{uuid.uuid4()}.png"
-    with open(image_url, "wb") as f:
-        f.write(image_response.content)
+    if current_app.config.get("MOCK_AI_MODELS", False):
+        image_url = current_app.config.get("MOCK_IMAGE_URL", "static/images/temp.png")
+    else:
+        try:
+            image_response = requests.post(current_app.config["IMAGE_GENERATION_URL"], json={"prompt": recipe_title},
+                                           timeout=60)
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            return {"message": "Image generation timed out"}, 504
+        if image_response.status_code != 200:
+            return {"message": "Error generating image from the image generation model"}, 500
+        if not os.path.exists("static/images"):
+            os.makedirs("static/images")
+        image_url = f"static/images/{uuid.uuid4()}.png"
+        with open(image_url, "wb") as f:
+            f.write(image_response.content)
     new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
                         direction="\n\n".join(recipe_data.get("direction", [])),
                         create_user_id=int(flask_jwt_extended.get_jwt_identity()),

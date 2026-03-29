@@ -32,3 +32,6 @@ AI_COOKING_AGENT_URL = f"http://{recipe_generation_host}:{recipe_generation_port
 image_generation_host = os.getenv("IMAGE_GENERATION_HOST", "localhost")
 image_generation_port = os.getenv("IMAGE_GENERATION_PORT", "5020")
 IMAGE_GENERATION_URL = f"http://{image_generation_host}:{image_generation_port}/create_image"
+
+MOCK_AI_MODELS = os.getenv("MOCK_AI_MODELS", "0") == "1"
+MOCK_IMAGE_URL = os.getenv("MOCK_IMAGE_URL", "static/images/temp.png")

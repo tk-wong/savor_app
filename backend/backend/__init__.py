@@ -1,14 +1,18 @@
 from flask import Flask
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy_utils import database_exists, create_database, drop_database
 
 
 def create_app(config="config.py"):
     app = Flask(__name__, static_folder='static', static_url_path='/api/static')
     app.config.from_pyfile(config)
     # print(app.config['SQLALCHEMY_DATABASE_URI'])
+    if app.config.get('DROP_DB_ON_STARTUP', False):
+        if database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
+            drop_database(app.config['SQLALCHEMY_DATABASE_URI'])
+        create_database(app.config['SQLALCHEMY_DATABASE_URI'])
     from backend.db_manager import db
     db.init_app(app)
-    if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
+    if not app.config.get('DROP_DB_ON_STARTUP', False) and not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
         create_database(app.config['SQLALCHEMY_DATABASE_URI'])
     create_table(app)
     from backend.db_manager import migrate

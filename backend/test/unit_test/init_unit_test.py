@@ -52,6 +52,35 @@ def test_database_created_if_not_exists(mocker):
     mock_create_db.assert_called_once()
 
 
+def test_database_dropped_and_created_when_drop_on_startup_enabled(mocker, tmp_path):
+    """Test that DB is reset on startup when DROP_DB_ON_STARTUP is enabled"""
+    config_file = tmp_path / "drop_startup_config.py"
+    config_file.write_text(
+        "\n".join([
+            "SQLALCHEMY_DATABASE_URI = 'postgresql://user:pass@localhost:5432/reset_db'",
+            "SQLALCHEMY_TRACK_MODIFICATIONS = False",
+            "SECRET_KEY = 'testing'",
+            "JWT_SECRET_KEY = 'testing'",
+            "DROP_DB_ON_STARTUP = True",
+            "AI_COOKING_AGENT_URL = 'http://localhost:5010/recipe_generation'",
+            "IMAGE_GENERATION_URL = 'http://localhost:5020/create_image'",
+        ])
+    )
+
+    mock_drop_db = mocker.patch('backend.drop_database')
+    mock_create_db = mocker.patch('backend.create_database')
+    mocker.patch('backend.database_exists', return_value=True)
+    mocker.patch('backend.db_manager.db.init_app')
+    mocker.patch('backend.db_manager.migrate.init_app')
+    mocker.patch('backend.jwt_manager.jwt.init_app')
+    mocker.patch("backend.create_table")
+
+    app = create_app(config=str(config_file))
+    expected_uri = "postgresql://user:pass@localhost:5432/reset_db"
+    mock_drop_db.assert_called_once_with(expected_uri)
+    mock_create_db.assert_called_once_with(expected_uri)
+
+
 def test_database_not_created_if_exists(mocker):
     """Test that create_database is not called if database already exists"""
     mock_create_db = mocker.patch('sqlalchemy_utils.create_database')

@@ -491,3 +491,42 @@ def test_handle_recipe_response_ingredient_with_quantity(app, mocker, client, mo
     assert mock_recipe_ingredient.called
 
 
+def test_chat_mock_models_question_no_network(app, mocker, client, mock_jwt_required, mock_get_jwt_identity,
+                                              mock_chat_group_model_class, mock_chat_group_data):
+    app.config["MOCK_AI_MODELS"] = True
+    mock_chat_group_model_class.query.filter_by.return_value.first.return_value = mock_chat_group_data[0]
+    mock_post = mocker.patch("requests.post")
+
+    response = client.post("/api/chat/", json={"chat_group_id": 1, "prompt": "what is al dente?"})
+
+    assert response.status_code == 200
+    assert response.json["prompt_type"] == "question"
+    assert response.json["response"].startswith("[MOCK]")
+    mock_post.assert_not_called()
+
+
+def test_handle_recipe_response_mock_models_skip_image_request(app, mocker, mock_jwt_required, mock_get_jwt_identity,
+                                                               mock_session):
+    app.config["MOCK_AI_MODELS"] = True
+    app.config["MOCK_IMAGE_URL"] = "static/images/mock.png"
+    chat_group = MagicMock()
+    chat_group.name = "Unnamed"
+    new_chat_history = MagicMock()
+    response_data = {
+        "recipe": {
+            "title": "mock pasta",
+            "description": "mock",
+            "direction": ["step 1"],
+            "tips": ["tip"],
+            "ingredients": [],
+        }
+    }
+    mock_post = mocker.patch("requests.post")
+
+    from backend.chat import _handle_recipe_response
+    with app.app_context():
+        result, status_code = _handle_recipe_response(chat_group, new_chat_history, response_data)
+
+    assert status_code == 200
+    assert result["recipe"]["image_url"] == "static/images/mock.png"
+    mock_post.assert_not_called()
