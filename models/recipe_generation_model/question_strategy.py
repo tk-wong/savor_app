@@ -8,7 +8,9 @@ class QuestionStrategy(ChainStrategy):
     You can combine the ideas from these recipes to answer the question. 
     Here are the previous conversions with the user: {chat_history}
     Here is the question from the user: {request}
-    Response in JSON format with the following structure (Do not add extra information other than the JSON format, and make sure the response is in valid JSON format):
+    Respond with ONLY one valid JSON object. Do not include markdown fences or any extra text.
+    The field "prompt_type" is REQUIRED and must be exactly "question".
+    Use the following exact top-level structure:
     {{
         "prompt_type": "question",
         "answer": "the answer to the user's question, which should be detailed and informative, and refer to the relevant recipes when necessary.

@@ -8,4 +8,4 @@ chroma_langchain_db/*
 /**/copilot*
 unused
 __pycache__/
-/.env_dev
+/.env*

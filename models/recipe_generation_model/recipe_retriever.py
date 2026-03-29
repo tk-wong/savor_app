@@ -1,13 +1,11 @@
-import logging
-from dotenv import load_dotenv
-import os
-
 import kagglehub
+import psycopg
 
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
 from sqlalchemy_utils import database_exists, create_database
 import polars as pl
+from db_utils import drop_pgvector_collection, should_drop_tables
 
 
 class RecipeRetriever:
@@ -19,14 +17,30 @@ class RecipeRetriever:
         self.csv_name = csv_name
         self.data_length = data_length
         self.db_path = database_path
+
+        created_database = False
+        if not database_exists(self.db_path):
+            self.app.logger.info("Database does not exist yet. Creating database...")
+            create_database(self.db_path)
+            created_database = True
+
+        # Drop vector collection if needed for integration testing
+        if should_drop_tables():
+            self.app.logger.info("DROP_TABLES_ON_INIT is enabled. Dropping vector collections...")
+            try:
+                db_connection = psycopg.connect(conninfo=self.db_path, autocommit=True)
+                drop_pgvector_collection(db_connection, "recipes")
+                db_connection.close()
+            except Exception as e:
+                self.app.logger.error(f"Error dropping vector collection: {e}")
+
         self.vector_db = PGVector(
             collection_name="recipes",
             embeddings=self.embedding_model,
             connection=self.db_path,
             use_jsonb=True,
         )
-        if not database_exists(self.db_path):
-            create_database(self.db_path)
+        if created_database or should_drop_tables():
             self.create_embeddings()
         self.retriever = self.vector_db.as_retriever(search_kwargs={"k": 5})
 

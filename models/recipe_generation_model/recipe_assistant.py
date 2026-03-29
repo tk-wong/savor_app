@@ -1,4 +1,5 @@
 import uuid
+import json
 from operator import itemgetter
 
 import psycopg
@@ -11,6 +12,7 @@ from classification_strategy import ClassificationStrategy
 from question_strategy import QuestionStrategy
 from recipe_generation_strategy import RecipeGenerationStrategy
 from recipe_retriever import RecipeRetriever
+from db_utils import drop_chat_history_tables, should_drop_tables
 
 
 class RecipeAssistant:
@@ -25,6 +27,15 @@ class RecipeAssistant:
         self.table_name = table_name
         self.app = app
         self.db_connection = psycopg.connect(conninfo=self.db_path, autocommit=True)
+        
+        # Drop chat history tables if needed for integration testing
+        if should_drop_tables():
+            self.app.logger.info("DROP_TABLES_ON_INIT is enabled. Dropping chat history tables...")
+            try:
+                drop_chat_history_tables(self.db_connection, self.table_name)
+            except Exception as e:
+                self.app.logger.error(f"Error dropping chat history tables: {e}")
+        
         self.generation_model: OllamaLLM = generation_model
         self.classification_model: OllamaLLM = classification_model
         self.recipe_retriever: RecipeRetriever = recipe_retriever
@@ -49,6 +60,19 @@ class RecipeAssistant:
                 "chat_history": itemgetter("chat_history"),
             }
         )
+
+    def _ensure_prompt_type(self, raw_response, classification):
+        """Ensure prompt_type is present when the model returns JSON."""
+        raw_text = raw_response.content if hasattr(raw_response, "content") else str(raw_response)
+        try:
+            payload = json.loads(raw_text)
+        except (TypeError, json.JSONDecodeError):
+            # Keep existing behavior for non-JSON outputs.
+            return raw_text
+
+        if isinstance(payload, dict) and "prompt_type" not in payload:
+            payload["prompt_type"] = classification
+        return json.dumps(payload)
 
     def classify(self, request, session_id):
         classifier_chain = self.model_strategies["classification"].build_chain(self.classification_model,
@@ -95,7 +119,7 @@ class RecipeAssistant:
                 {"request": request},
                 config={"configurable": {"session_id": session_id}},
             )
-            return result.content if hasattr(result, "content") else str(result)
+            return self._ensure_prompt_type(result, classification)
         except Exception as e:
             # self.app.logger.error(f"Error handling request: {e}\n Traceback: {e.__traceback__}")
             self.app.logger.error(f"Error handling request: {e}")
