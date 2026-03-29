@@ -13,6 +13,8 @@ def test_get_chat_history_success(client, sample_login, sample_chat_group, sampl
     assert response.json["chat_history"][0]["prompt"] == "Test prompt 0"
     assert response.json["chat_history"][0]["response"] == {"response": "Test response 0"}
     assert response.json["chat_history"][0]["image_url"] == "test_url0"
+    assert response.json["chat_history"][0]["timestamp"] is not None
+    datetime.datetime.fromisoformat(response.json["chat_history"][0]["timestamp"])
 
 
 def test_chat_group_not_found(client, sample_login):
