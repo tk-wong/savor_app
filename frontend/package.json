@@ -9,7 +9,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "jest"
+    "test": "jest",
+    "test:integration": "bash -lc 'set -a; source .env; set +a; jest src/__tests__/integration --runInBand --testTimeout=180000'"
   },
   "jest": {
     "preset": "jest-expo",
