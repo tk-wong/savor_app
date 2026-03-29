@@ -19,9 +19,9 @@ apiClient.interceptors.response.use(
       // Optionally, you can clear the stored token here
       SecureStore.deleteItemAsync("userToken");
       Alert.alert("Session expired", "Your session has expired. Please log in again.", [
-        { text: "OK", onPress: () => router.navigate("/loginPage") }
+        { text: "OK", onPress: () => router.replace("/loginPage") }
       ]);
-      router.navigate("/loginPage");
+      router.replace("/loginPage");
     }
     return Promise.reject(error);
   },

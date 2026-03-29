@@ -85,15 +85,19 @@ describe("RecipePage", () => {
   const mockStopListening = jest.fn();
   const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
   const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  const originalBackendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
   const recipePayload = {
     recipe: {
       id: 101,
-      name: "Test Recipe",
+      title: "Test Recipe",
       description: "Delicious food",
       image_url: "https://cdn.test/recipe.png",
-      ingredients: ["Eggs", "Flour"],
-      instructions: ["Step one", "Step two"],
+      ingredients: [
+        { ingredient_name: "Eggs", quantity: "2" },
+        { ingredient_name: "Flour", quantity: "1 cup" },
+      ],
+      directions: ["Step one", "Step two"],
       tips: ["Be patient"],
     },
   } as any;
@@ -129,7 +133,12 @@ describe("RecipePage", () => {
       startListening: mockStartListening,
       stopListening: mockStopListening,
     });
+    process.env.EXPO_PUBLIC_BACKEND_URL = "https://api.test/api";
     jest.useRealTimers();
+  });
+
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_BACKEND_URL = originalBackendUrl;
   });
 
   it("fetches and renders recipe details with remote image", async () => {
@@ -158,6 +167,65 @@ describe("RecipePage", () => {
     expect(images[0].props.source).toEqual({
       uri: "https://blocks.astratic.com/img/general-img-square.png",
     });
+  });
+
+  it("normalizes relative image paths and ingredient fallback rendering", async () => {
+    delete process.env.EXPO_PUBLIC_BACKEND_URL;
+    mockedGetRecipeById.mockResolvedValueOnce({
+      recipe: {
+        id: 202,
+        title: "Relative Path Recipe",
+        description: "Desc",
+        image_url: "static\\images\\r.png",
+        ingredients: [
+          "Raw ingredient",
+          {},
+          { ingredient_name: "Flour", quantity: "1 cup" },
+          { ingredient_name: "Salt", quantity: "" },
+          { ingredient_name: "", quantity: "2 tbsp" },
+          { ingredient_name: "", quantity: "" },
+        ],
+        directions: ["Step one"],
+        tips: ["Tip"],
+      },
+    } as any);
+
+    const { UNSAFE_getAllByType } = render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("Raw ingredient")).toBeTruthy();
+      expect(screen.getByText("1 cup Flour")).toBeTruthy();
+      expect(screen.getByText("Salt")).toBeTruthy();
+      expect(screen.getByText("2 tbsp")).toBeTruthy();
+      expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
+    });
+
+    const images = UNSAFE_getAllByType(Image);
+    expect(images[0].props.source.uri).toContain("/static/images/r.png");
+  });
+
+  it("normalizes duplicated /api prefix in recipe image paths", async () => {
+    process.env.EXPO_PUBLIC_BACKEND_URL = "https://api.test/api";
+    mockedGetRecipeById.mockResolvedValueOnce({
+      recipe: {
+        id: 203,
+        title: "Api Prefix Recipe",
+        description: "Desc",
+        image_url: "/api/static/images/dedupe.png",
+        ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+        directions: ["Step one"],
+        tips: ["Tip"],
+      },
+    } as any);
+
+    const { UNSAFE_getAllByType } = render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("Api Prefix Recipe")).toBeTruthy();
+    });
+
+    const images = UNSAFE_getAllByType(Image);
+    expect(images[0].props.source.uri).toBe("https://api.test/api/static/images/dedupe.png");
   });
 
   it("starts and stops voice interaction from the main toggle", async () => {

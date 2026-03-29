@@ -25,7 +25,7 @@ import {StyledHeader} from "@/src/components/styledHeader";
 export default function RecipePage() {
     const recipe_sample: DetailRecipe = {
         id: 1,
-        name: "Spaghetti Carbonara",
+        title: "Spaghetti Carbonara",
         description: "A classic Italian pasta dish made with eggs, cheese, pancetta, and black pepper.",
         // image_url: require("../../assets/images/react-logo.png"),
         ingredients: [
@@ -37,7 +37,7 @@ export default function RecipePage() {
             "2 cloves of garlic",
             "Salt and black pepper to taste"
         ],
-        instructions: [
+        directions: [
             "Cook the spaghetti in a large pot of salted boiling water until al dente.",
             "In a pan, cook the pancetta with the garlic until crispy. Remove the garlic and discard.",
             "In a bowl, beat the eggs and mix in the pecorino and parmesan cheese.",
@@ -67,13 +67,13 @@ export default function RecipePage() {
 
     const speakStep = async (stepIndex: number, isButtonPress: boolean) => {
         console.log("Speaking step:", stepIndex);
-        if (stepIndex >= 0 && stepIndex < recipe.instructions.length) {
+        if (stepIndex >= 0 && stepIndex < recipe.directions.length) {
             // Ensure STT is stopped before starting TTS, and restart afterwards.
             if (ttsLockRef.current) return; // already speaking
             if (!isButtonPress) {
                 ttsLockRef.current = true;
             }
-            const text = recipe.instructions[stepIndex];
+            const text = recipe.directions[stepIndex];
             try {
                 setListening(false);
                 try {
@@ -123,7 +123,7 @@ export default function RecipePage() {
     };
     useSpeechRecognitionEvent("result", speechResultHandler)
     const startVoiceInteraction = () => {
-        console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
+        console.log(`turn on voice assistant to read the recipe ${recipe.title} (id: ${recipe.id})`);
         startListening()
     }
     const speakPreviousStep = async () => {
@@ -145,7 +145,7 @@ export default function RecipePage() {
     };
     const speakNextStep = async () => {
         await stopSpeaking();
-        if (stepIndex + 1 <= recipe.instructions.length - 1) {
+        if (stepIndex + 1 <= recipe.directions.length - 1) {
             const isButtonPress = !listening;
             const nextIndex = stepIndex + 1;
             if (!isButtonPress) {
@@ -191,7 +191,7 @@ export default function RecipePage() {
     const recipe_uri = recipe.image_url ? process.env.EXPO_PUBLIC_BACKEND_URL + recipe.image_url : placeholder_image
     return (
         <>
-            <StyledHeader title={recipe.name}/>
+            <StyledHeader title={recipe.title}/>
             <SafeAreaView>
                 <ScrollView className={"px-4 pb-safe-8 safe-pb-12"}>
                     <Image source={{uri: recipe_uri}}
@@ -203,7 +203,7 @@ export default function RecipePage() {
                         <Text key={index} className={"global-text text-on-surface pb-2"}>{ingredient}</Text>
                     ))}
                     <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Instructions:</Text>
-                    {recipe.instructions.map((instruction, index) => {
+                    {recipe.directions.map((instruction, index) => {
                         const currentStepClass = stepIndex == index ? "text-red-500" : "text-on-surface";
                         return (<Text key={index}
                                       className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
@@ -213,7 +213,7 @@ export default function RecipePage() {
                         <Text className={"global-text text-on-surface pb-4"} key={index}>{`${index + 1}. ${tip}`}</Text>
                     ))}
                     <TouchableOpacity onPress={() => {
-                        console.log(`turn on voice assistant to read the recipe ${recipe.name} (id: ${recipe.id})`);
+                        console.log(`turn on voice assistant to read the recipe ${recipe.title} (id: ${recipe.id})`);
                         const previousState = listening;
                         setListening(!listening);
                         if (!previousState) {
@@ -233,7 +233,7 @@ export default function RecipePage() {
                         <View className={"flex-row justify-center align-middle"}>
                             <TouchableOpacity onPress={speakNextStep}
                                             className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
-                                              disabled={stepIndex >= recipe.instructions.length - 1}>
+                                              disabled={stepIndex >= recipe.directions.length - 1}>
                                 <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"}/>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={speakPreviousStep}

@@ -18,7 +18,25 @@ import {ApiRequestError} from "../api/apiRequestError";
 import {getAllRecipes} from "../api/recipe";
 import {Recipe} from "../types";
 import {StyledHeader} from "@/src/components/styledHeader";
-import {string} from "postcss-selector-parser";
+
+const buildImageUrl = (base: string, imagePath?: string | null) => {
+    if (!imagePath) {
+        return undefined;
+    }
+    if (/^https?:\/\//i.test(imagePath)) {
+        return imagePath;
+    }
+
+    const normalizedBase = String(base).replace(/\/+$/, "");
+    let normalizedPath = String(imagePath).trim().replace(/\\/g, "/");
+    if (normalizedBase.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+        normalizedPath = normalizedPath.slice(4);
+    }
+    if (!normalizedPath.startsWith("/")) {
+        normalizedPath = `/${normalizedPath}`;
+    }
+    return `${normalizedBase}${normalizedPath}`;
+};
 
 export default function AllRecipePage() {
     const headerHeight = useHeaderHeight();
@@ -55,7 +73,7 @@ function RecipeCard() {
         const placeholderImage = "https://blocks.astratic.com/img/general-img-landscape.png";
         getAllRecipes().then((data) => {
             const formattedRecipes = data.recipes.map((recipe: Recipe) => {
-                const image_uri  = recipe.image_url ? process.env.EXPO_PUBLIC_BACKEND_URL + recipe.image_url : placeholderImage;
+                const image_uri = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url) ?? placeholderImage;
                 return {
                     id: recipe.id,
                     name: recipe.title,

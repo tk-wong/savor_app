@@ -228,6 +228,7 @@ describe("ChatPage", () => {
   const warnMock = jest.spyOn(console, "warn").mockImplementation(() => {});
   const logMock = jest.spyOn(console, "log").mockImplementation(() => {});
   const originalPlatformOS = Platform.OS;
+  const originalBackendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
   const triggerSpeechResult = (transcript?: string) => {
     mockSpeechCallbacks.result?.({
@@ -245,12 +246,16 @@ describe("ChatPage", () => {
     mockedUseRouter.mockReturnValue({ navigate: navigateMock });
     mockedUseLocalSearchParams.mockReturnValue({});
     mockedUseColorScheme.mockReturnValue("light");
+    mockedGetNewChatGroup.mockResolvedValue({ group_id: 1 } as any);
+    mockedSendMessage.mockResolvedValue({ prompt_type: "question", answer: "ok" } as any);
     mockRequestPermissionsAsync.mockResolvedValue({ granted: true });
     Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
+    process.env.EXPO_PUBLIC_BACKEND_URL = "https://api.test/api";
   });
 
   afterEach(() => {
     Object.defineProperty(Platform, "OS", { configurable: true, value: originalPlatformOS });
+    process.env.EXPO_PUBLIC_BACKEND_URL = originalBackendUrl;
   });
 
   afterAll(() => {
@@ -314,12 +319,12 @@ describe("ChatPage", () => {
       prompt_type: "recipe",
       recipe: {
         id: 1,
-        name: "Tomato Soup",
+        title: "Tomato Soup",
         description: "A cozy soup",
-        ingredients: ["Tomato", "Salt"],
-        instructions: ["Boil", "Serve"],
+        ingredients: [{ ingredient_name: "Tomato", quantity: "2" }],
+        directions: ["Boil", "Serve"],
         tips: ["Use ripe tomatoes"],
-        image_url: null,
+        image_url: "/api/static/images/soup.png",
       },
     } as any);
 
@@ -330,8 +335,248 @@ describe("ChatPage", () => {
       expect(mockedSendMessage).toHaveBeenCalledWith("hello bot!", 55);
     });
     await waitFor(() => {
-      expect(mockLatestGiftedChatProps.messages[0].image).toBeUndefined();
+      expect(mockLatestGiftedChatProps.messages[0].image).toContain("/static/images/soup.png");
       expect(mockLatestGiftedChatProps.messages[0].text).toContain("Here's a recipe for you");
+      expect(mockLatestGiftedChatProps.messages[0].text).toContain("1. Boil");
+    });
+  });
+
+  it("handles invalid recipe payload from sendMessage and rolls back optimistic update", async () => {
+    mockedGetNewChatGroup.mockResolvedValue({ group_id: 88 } as any);
+    mockedSendMessage.mockResolvedValue({ prompt_type: "recipe", recipe: undefined } as any);
+
+    render(React.createElement(ChatPage));
+    fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
+
+    await waitFor(() => {
+      expect(alertMock).toHaveBeenCalledWith(
+          "Error",
+          "Received invalid recipe data from server. Please try again.",
+      );
+    });
+    expect(mockLatestGiftedChatProps.messages).toHaveLength(0);
+  });
+
+  it("formats recipe markdown fallbacks and image path variants", async () => {
+    mockedGetNewChatGroup.mockResolvedValue({ group_id: 66 } as any);
+    mockedSendMessage
+        .mockResolvedValueOnce({
+          prompt_type: "recipe",
+          recipe: {
+            id: 11,
+            title: undefined,
+            description: undefined,
+            ingredients: [],
+            directions: [],
+            tips: [],
+            image_url: "static\\images\\fallback.png",
+          },
+        } as any)
+        .mockResolvedValueOnce({
+          prompt_type: "recipe",
+          recipe: {
+            id: 12,
+            title: "Mixed Ingredients",
+            description: "Mixed",
+            ingredients: [
+              "Raw\\ntext",
+              {},
+              { ingredient_name: "Flour", quantity: "1 cup" },
+              { ingredient_name: "Salt", quantity: "" },
+              { ingredient_name: "", quantity: "2 tbsp" },
+              { ingredient_name: "", quantity: "" },
+            ],
+            directions: ["Stir"],
+            tips: ["Tip A"],
+            image_url: "https://cdn.test/abs.png",
+          },
+        } as any);
+
+    render(React.createElement(ChatPage));
+
+    fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages[0].image).toContain("/static/images/fallback.png");
+      expect(mockLatestGiftedChatProps.messages[0].text).toContain("- N/A");
+      expect(mockLatestGiftedChatProps.messages[0].text).toContain("1. N/A");
+    });
+
+    fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
+    await waitFor(() => {
+      const latestBotText = mockLatestGiftedChatProps.messages[0].text;
+      expect(mockLatestGiftedChatProps.messages[0].image).toBe("https://cdn.test/abs.png");
+      expect(latestBotText).toContain("- Raw\ntext");
+      expect(latestBotText).toContain("- 1 cup Flour");
+      expect(latestBotText).toContain("- Salt");
+      expect(latestBotText).toContain("- 2 tbsp");
+      expect(latestBotText).toContain("- N/A");
+    });
+  });
+
+  it("parses stored history responses for question, recipe, and plain text fallbacks", async () => {
+    mockedUseLocalSearchParams.mockReturnValue({ chatGroupId: "9" });
+    mockedGetChatHistoryByGroupId.mockResolvedValue({
+      chat_history: [
+        {
+          id: 1,
+          prompt: "Q1",
+          response: JSON.stringify({ prompt_type: "question", answer: "hello\\nworld" }),
+          timestamp: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: 2,
+          prompt: "Q2",
+          response: JSON.stringify({
+            prompt_type: "recipe",
+            recipe: {
+              id: 2,
+              title: "Stored",
+              description: "Stored desc",
+              ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+              directions: ["Cook"],
+              tips: ["Serve"],
+              image_url: "https://cdn.test/stored.png",
+            },
+          }),
+          timestamp: "2026-01-01T00:00:01.000Z",
+        },
+        {
+          id: 3,
+          prompt: "Q3",
+          response: JSON.stringify({ prompt_type: "recipe" }),
+          timestamp: "2026-01-01T00:00:02.000Z",
+          image_url: "https://cdn.test/fallback-image.png",
+        },
+        {
+          id: 4,
+          prompt: "Q4",
+          response: "plain text",
+          timestamp: "2026-01-01T00:00:03.000Z",
+        },
+      ],
+    } as any);
+
+    render(React.createElement(ChatPage));
+
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages).toHaveLength(8);
+    });
+
+    const messageTexts = mockLatestGiftedChatProps.messages.map((m: any) => m.text);
+    expect(messageTexts.join("\n")).toContain("hello\nworld");
+    expect(messageTexts.join("\n")).toContain("## Stored");
+    expect(messageTexts).toContain("");
+    expect(messageTexts).toContain("plain text");
+
+    const fallbackImageMessage = mockLatestGiftedChatProps.messages.find((m: any) => m._id === 3.5);
+    expect(fallbackImageMessage?.image).toBe("https://cdn.test/fallback-image.png");
+  });
+
+  it("covers history parsing edge cases for malformed and object responses", async () => {
+    delete process.env.EXPO_PUBLIC_BACKEND_URL;
+    mockedUseLocalSearchParams.mockReturnValue({ chatGroupId: "12" });
+    mockedGetChatHistoryByGroupId.mockResolvedValue({
+      chat_history: [
+        {
+          id: 1,
+          prompt: "empty answer",
+          response: JSON.stringify({ prompt_type: "question", answer: "" }),
+          timestamp: "2026-02-01T00:00:00.000Z",
+        },
+        {
+          id: 2,
+          prompt: "object response",
+          response: { prompt_type: "recipe", recipe: { id: 2, title: "Obj", description: "D", ingredients: [{}], directions: [undefined], tips: [undefined], image_url: "static\\images\\obj.png" } },
+          timestamp: "2026-02-01T00:00:01.000Z",
+          image_url: "https://cdn.test/obj-fallback.png",
+        },
+        {
+          id: 3,
+          prompt: "broken json",
+          response: "{not-json}",
+          timestamp: "2026-02-01T00:00:02.000Z",
+        },
+        {
+          id: 4,
+          prompt: "object fallback",
+          response: { foo: "bar" },
+          timestamp: "2026-02-01T00:00:03.000Z",
+        },
+      ],
+    } as any);
+
+    render(React.createElement(ChatPage));
+
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages).toHaveLength(8);
+    });
+
+    const textBlob = mockLatestGiftedChatProps.messages.map((m: any) => m.text).join("\n");
+    expect(textBlob).toContain("## Obj");
+    expect(textBlob).toContain("- N/A");
+    expect(textBlob).toContain("1. ");
+    expect(textBlob).toContain("{not-json}");
+    expect(textBlob).toContain('{"foo":"bar"}');
+
+    const historyRecipeImage = mockLatestGiftedChatProps.messages.find((m: any) => m._id === 2.5);
+    expect(historyRecipeImage?.image).toContain("/static/images/");
+  });
+
+  it("uses empty history list when chat_history is not an array", async () => {
+    mockedUseLocalSearchParams.mockReturnValue({ chatGroupId: "13" });
+    mockedGetChatHistoryByGroupId.mockResolvedValue({ chat_history: {} } as any);
+
+    render(React.createElement(ChatPage));
+
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages).toEqual([]);
+    });
+  });
+
+  it("returns undefined image for recipe messages without image_url", async () => {
+    mockedGetNewChatGroup.mockResolvedValue({ group_id: 67 } as any);
+    mockedSendMessage.mockResolvedValue({
+      prompt_type: "recipe",
+      recipe: {
+        id: 67,
+        title: "No Image",
+        description: "desc",
+        ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+        directions: ["Cook"],
+        tips: ["Serve"],
+        image_url: undefined,
+      },
+    } as any);
+
+    render(React.createElement(ChatPage));
+    fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
+
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages[0].image).toBeUndefined();
+    });
+  });
+
+  it("uses empty backend base fallback when env is missing", async () => {
+    delete process.env.EXPO_PUBLIC_BACKEND_URL;
+    mockedGetNewChatGroup.mockResolvedValue({ group_id: 91 } as any);
+    mockedSendMessage.mockResolvedValue({
+      prompt_type: "recipe",
+      recipe: {
+        id: 91,
+        title: "Envless",
+        description: "desc",
+        ingredients: [{ ingredient_name: "X", quantity: "1" }],
+        directions: ["Do"],
+        tips: ["Tip"],
+        image_url: "/api/static/images/envless.png",
+      },
+    } as any);
+
+    render(React.createElement(ChatPage));
+    fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
+
+    await waitFor(() => {
+      expect(mockLatestGiftedChatProps.messages[0].image).toContain("/api/static/images/envless.png");
     });
   });
 

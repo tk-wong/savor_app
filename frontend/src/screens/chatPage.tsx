@@ -24,6 +24,7 @@ import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
 import {useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
 import {ChatResponse} from "@/src/types/response";
+import {DetailRecipe, Ingredient} from "@/src/types";
 import {cssInterop} from "nativewind";
 import {StyledHeader} from "@/src/components/styledHeader";
 
@@ -45,6 +46,99 @@ function HeaderRightButton({clearChat}: { clearChat: () => void }) {
         </View>
     );
 }
+
+const normalizeEscapedNewlines = (value: string) => value.replace(/\\n/g, "\n");
+
+const toBulletList = (items?: string[]) => {
+    if (!Array.isArray(items) || items.length === 0) {
+        return "- N/A";
+    }
+    return items
+        .map((item) => `- ${normalizeEscapedNewlines(String(item ?? "").trim())}`)
+        .join("\n");
+};
+
+const toNumberedList = (items?: string[]) => {
+    if (!Array.isArray(items) || items.length === 0) {
+        return "1. N/A";
+    }
+    return items
+        .map((item, index) => `${index + 1}. ${normalizeEscapedNewlines(String(item ?? "").trim())}`)
+        .join("\n");
+};
+
+const toIngredientList = (ingredients?: Array<Ingredient | string>) => {
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+        return "- N/A";
+    }
+
+    return ingredients.map((ingredient) => {
+        if (typeof ingredient === "string") {
+            return `- ${normalizeEscapedNewlines(ingredient.trim())}`;
+        }
+
+        const ingredientName = normalizeEscapedNewlines(String(ingredient?.ingredient_name ?? "").trim());
+        const quantity = normalizeEscapedNewlines(String(ingredient?.quantity ?? "").trim());
+
+        if (quantity && ingredientName) {
+            return `- ${quantity} ${ingredientName}`;
+        }
+        if (ingredientName) {
+            return `- ${ingredientName}`;
+        }
+        if (quantity) {
+            return `- ${quantity}`;
+        }
+        return "- N/A";
+    }).join("\n");
+};
+
+const buildRecipeMarkdown = (recipe: DetailRecipe) => {
+    const recipeTitle = String(recipe?.title ?? "");
+    const recipeDescription = normalizeEscapedNewlines(String(recipe?.description ?? ""));
+    const recipeIngredients = toIngredientList(recipe?.ingredients);
+    const recipeInstructions = toNumberedList(recipe?.directions);
+    const recipeTips = toBulletList(recipe?.tips);
+
+    return [
+        "Here's a recipe for you:",
+        "",
+        `## ${recipeTitle}`,
+        "",
+        "**Description**",
+        recipeDescription,
+        "",
+        "**Ingredients**",
+        recipeIngredients,
+        "",
+        "**Instructions**",
+        recipeInstructions,
+        "",
+        "**Tips**",
+        recipeTips,
+    ].join("\n");
+};
+
+const buildImageUrl = (base: string, imagePath?: string) => {
+    if (!imagePath) {
+        return undefined;
+    }
+    if (/^https?:\/\//i.test(imagePath)) {
+        return imagePath;
+    }
+
+    const normalizedBase = String(base).replace(/\/+$/, "");
+    let normalizedPath = String(imagePath).trim().replace(/\\/g, "/");
+
+    if (normalizedBase.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+        normalizedPath = normalizedPath.slice(4);
+    }
+    if (!normalizedPath.startsWith("/")) {
+        normalizedPath = `/${normalizedPath}`;
+    }
+
+    return `${normalizedBase}${normalizedPath}`;
+};
 
 //
 // const useMessage = (): [IMessage[], Dispatch<SetStateAction<IMessage[]>>]  => {
@@ -86,27 +180,56 @@ export default function ChatPage() {
             console.log("Loaded chat group ID from params:", initialChatGroupId);
             getChatHistoryByGroupId(initialChatGroupId).then((response) => {
                 const history = Array.isArray(response?.chat_history) ? response.chat_history : [];
-                const sortedHistory = history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                const formattedMessages = sortedHistory.map((msg) => ([
-                    {
-                        _id: msg.id + 0.5, // Ensure unique ID for response message
-                        text: msg.response,
-                        createdAt: new Date(msg.timestamp),
-                        user: {
-                            _id: "bot",
-                            name: 'SavorBot',
-                        },
-                        image: msg.image_url ?? undefined,
-                    },
-                    {
-                        _id: msg.id,
-                        text: msg.prompt,
-                        createdAt: new Date(msg.timestamp),
-                        user: {
-                            _id: 1
+                const sortedHistory = history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                const formattedMessages = sortedHistory.map((msg) => {
+                    console.log(msg);
+                    let responseText: string = "";
+                    let responseImage: string | undefined = undefined;
+
+                    // Parse stored response JSON and format it like backend responses
+                    let storedResponse;
+                    try {
+                        storedResponse = typeof msg.response === "string" ? JSON.parse(msg.response) : msg.response;
+                    } catch (e) {
+                        // Fallback for plain text responses
+                        storedResponse = null;
+                    }
+
+                    if (storedResponse?.prompt_type === "question") {
+                        responseText = normalizeEscapedNewlines(storedResponse.answer || "");
+                    } else if (storedResponse?.prompt_type === "recipe") {
+                        const recipe = storedResponse.recipe;
+                        if (recipe) {
+                            responseImage = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url);
+                            responseText = buildRecipeMarkdown(recipe);
+                        } else {
+                            responseText = "";
                         }
-                    },
-                ]));
+                    } else {
+                        responseText = typeof msg.response === "string" ? msg.response : JSON.stringify(msg.response);
+                    }
+
+                    return ([
+                        {
+                            _id: msg.id + 0.5, // Ensure unique ID for response message
+                            text: responseText,
+                            createdAt: new Date(msg.timestamp),
+                            user: {
+                                _id: "bot",
+                                name: 'SavorBot',
+                            },
+                            image: responseImage ?? msg.image_url ?? undefined,
+                        },
+                        {
+                            _id: msg.id,
+                            text: msg.prompt,
+                            createdAt: new Date(msg.timestamp),
+                            user: {
+                                _id: 1
+                            }
+                        },
+                    ])
+                });
                 const fullMessageList: IMessage[] = formattedMessages.flat();
                 setMessages(fullMessageList);
             })
@@ -149,40 +272,43 @@ export default function ChatPage() {
             text: messageText,
         };
 
+        const rollbackOptimisticMessage = () => {
+            setMessages((previousMessages) => previousMessages.filter((message) => message._id !== sanitizedMessage._id));
+        };
+
+        // Optimistically show the user's message before network round-trips.
+        setMessages((previousMessages) => GiftedChat.append(previousMessages, [sanitizedMessage]));
+
         const sendToBackend = (groupId: number) => {
             console.log("Group ID:", groupId);
             const handleMessageResponse = (response: ChatResponse) => {
-                setMessages(previousMessages =>
-                    GiftedChat.append(previousMessages, [sanitizedMessage]),
-                )
                 if (!response || !response.prompt_type) {
                     console.warn("Invalid response from backend:", response);
+                    rollbackOptimisticMessage();
                     Alert.alert("Error", "Received invalid response from server. Please try again.");
                     return;
                 }
+                console.log(response);
                 let response_text: string = "";
+                let recipe_url: string | undefined = undefined;
                 if (response.prompt_type === "question") {
-                    response_text = response.answer;
+                    response_text = normalizeEscapedNewlines(response.answer);
                 } else if (response.prompt_type === "recipe") {
-
                     const recipe = response.recipe;
-                    const recipe_title = recipe.name;
-                    const recipe_description = recipe.description;
-                    const recipe_ingredients = recipe.ingredients.join("\n");
-                    const recipe_instructions = recipe.instructions.join("\n");
-                    const recipe_tips = recipe.tips.join("\n");
-                    response_text = `Here's a recipe for you:\n\n
-                    Title: ${recipe_title}\n\n
-                    Description:\n${recipe_description}\n\n
-                    Ingredients:\n${recipe_ingredients}\n\n
-                    Instructions:\n${recipe_instructions}\n\n
-                    Tips:\n${recipe_tips}`;
+                    if (!recipe) {
+                        rollbackOptimisticMessage();
+                        Alert.alert("Error", "Received invalid recipe data from server. Please try again.");
+                        return;
+                    }
+
+                    recipe_url = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url);
+                    response_text = buildRecipeMarkdown(recipe);
                 } else {
+                    rollbackOptimisticMessage();
                     Alert.alert("Unknown response type", `Received unknown prompt type from server`);
                     console.warn("Unknown prompt type in response:", response);
                     return;
                 }
-
 
                 const botMessage: IMessage = {
                     _id: Math.random(),
@@ -192,7 +318,7 @@ export default function ChatPage() {
                         _id: "bot",
                         name: 'SavorBot',
                     },
-                    image : response.prompt_type === "recipe" ? response.recipe.image_url ?? undefined : undefined,
+                    image: recipe_url,
                 }
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
@@ -206,6 +332,7 @@ export default function ChatPage() {
             };
             const handleMessageError = (error: ApiRequestError) => {
                 console.error("Error sending message:", error.message);
+                rollbackOptimisticMessage();
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
 
             };
@@ -219,6 +346,7 @@ export default function ChatPage() {
                 sendToBackend(response.group_id);
             }).catch((error: ApiRequestError) => {
                 console.error("Error creating new chat group:", error.message);
+                rollbackOptimisticMessage();
                 Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while creating chat group.");
             })
         } else {

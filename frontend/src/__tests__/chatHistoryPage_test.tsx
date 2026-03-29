@@ -44,6 +44,26 @@ describe("ChatHistoryPage", () => {
     });
   });
 
+  it("formats last_edit dates and falls back for invalid date strings", async () => {
+    mockedGetAllChatGroups.mockResolvedValue({
+      chat_groups: [
+        { id: 7, name: "Valid Date", last_edit: "2026-03-20T12:00:00Z" },
+        { id: 8, name: "Invalid Date", last_edit: "not-a-date" },
+      ],
+    } as any);
+
+    render(<ChatHistoryPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Valid Date")).toBeTruthy();
+      expect(screen.getByText("20th, Mar 2026")).toBeTruthy();
+      expect(screen.getByText("Invalid Date")).toBeTruthy();
+    });
+
+    const unknownDateRows = screen.getAllByText("Unknown date");
+    expect(unknownDateRows.length).toBeGreaterThan(0);
+  });
+
   it("navigates to chat page with chatGroupId when a group is pressed", async () => {
     mockedGetAllChatGroups.mockResolvedValue({
       chat_groups: [{ id: 42, name: "Group 42", last_edited: "2026-03-21T08:30:00Z" }],
