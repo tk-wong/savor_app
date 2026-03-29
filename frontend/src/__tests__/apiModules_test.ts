@@ -196,7 +196,9 @@ describe("chat api", () => {
 
     await expect(getNewChatGroup()).resolves.toEqual({ group_id: 123 });
     await expect(getAllChatGroups()).resolves.toEqual({ chat_groups: [{ id: 1 }] });
-    await expect(getChatHistoryByGroupId(1)).resolves.toEqual([{ role: "user", content: "hello" }]);
+    await expect(getChatHistoryByGroupId(1)).resolves.toEqual({
+      chat_history: [{ role: "user", content: "hello" }],
+    });
 
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(1, "/chat/group/new");
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(2, "/chat/group/all");

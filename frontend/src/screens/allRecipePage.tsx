@@ -29,7 +29,7 @@ export default function AllRecipePage() {
     // });
     return (<>
         <StyledHeader title={"All Recipes"}/>
-        <SafeAreaView>
+        <SafeAreaView className={"bg-surface"}>
             <RecipeCard/>
             {Platform.OS === 'android' && <View style={{height: insets.bottom}}/>}
         </SafeAreaView>
@@ -84,6 +84,7 @@ function RecipeCard() {
                   keyExtractor={(item) => item.id.toString()}
                   contentContainerClassName={"gap-4 px-4 pb-6"}
                   columnWrapperClassName={"gap-4"}
+                  className={"color-surface"}
         />
     )
 }

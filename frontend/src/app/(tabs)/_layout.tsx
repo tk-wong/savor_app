@@ -22,6 +22,9 @@ export default function Layout() {
                     return <Ionicons name={focused ? "receipt" : "receipt-outline"} size={size}
                                      className={"!color-on-surface"}/>
                 },
+                sceneStyle: {backgroundColor: isDarkMode ? "#141218" : "#FEF7FF"},
+                tabBarStyle: {backgroundColor: isDarkMode ? "#36343B" : "#E6E0E9"},
+                tabBarLabelStyle: {color: isDarkMode ? "#E6E0E9" : "#1D1B20"},
             }}/>
         </Tabs>
     )

@@ -85,16 +85,9 @@ export default function ChatPage() {
             setChatGroupId(initialChatGroupId);
             console.log("Loaded chat group ID from params:", initialChatGroupId);
             getChatHistoryByGroupId(initialChatGroupId).then((response) => {
-                const sortedHistory = response.chat_history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                const history = Array.isArray(response?.chat_history) ? response.chat_history : [];
+                const sortedHistory = history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 const formattedMessages = sortedHistory.map((msg) => ([
-                    {
-                        _id: msg.id,
-                        text: msg.prompt,
-                        createdAt: new Date(msg.timestamp),
-                        user: {
-                            _id: 1
-                        }
-                    },
                     {
                         _id: msg.id + 0.5, // Ensure unique ID for response message
                         text: msg.response,
@@ -103,10 +96,18 @@ export default function ChatPage() {
                             _id: "bot",
                             name: 'SavorBot',
                         },
-                        image: msg.image_url ?? null
-                    }
+                        image: msg.image_url ?? undefined,
+                    },
+                    {
+                        _id: msg.id,
+                        text: msg.prompt,
+                        createdAt: new Date(msg.timestamp),
+                        user: {
+                            _id: 1
+                        }
+                    },
                 ]));
-                const fullMessageList = formattedMessages.flat();
+                const fullMessageList: IMessage[] = formattedMessages.flat();
                 setMessages(fullMessageList);
             })
         } else {

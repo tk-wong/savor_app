@@ -15,12 +15,12 @@ export default function ChatHistoryPage() {
             {
                 id: 1,
                 name: "Chat Group 1",
-                last_edited: "2024-06-01T12:00:00Z"
+                last_edit: "2024-06-01T12:00:00Z"
             },
             {
                 id: 2,
                 name: "Chat Group 2",
-                last_edited: "2024-06-02T15:30:00Z"
+                last_edit: "2024-06-02T15:30:00Z"
             }
         ])
     }, []);

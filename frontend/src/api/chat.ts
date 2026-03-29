@@ -39,7 +39,7 @@ export const getAllChatGroups = async (): Promise<AllChatGroupResponse> => {
 export const getChatHistoryByGroupId = async (group_id: number): Promise<ChatHistoryResponse> => {
     try {
         const response = await apiClient.get(`/chat/group/${group_id}/history`);
-        return response.data.chat_history; // Assuming the response contains the chat history for the group
+        return response.data; // Contains chat_history for the requested group
     } catch (error) {
         throw mapApiError(error);
     }

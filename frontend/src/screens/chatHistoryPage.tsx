@@ -1,4 +1,3 @@
-import {SafeAreaView} from "react-native-safe-area-context";
 import {useFocusEffect, useRouter} from "expo-router";
 import {useCallback, useState} from "react";
 import {Alert, FlatList, Text, TouchableOpacity, View} from "react-native";
@@ -10,6 +9,21 @@ import {StyledHeader} from "@/src/components/styledHeader";
 
 export default function ChatHistoryPage() {
     const [allChatGroups, setAllChatGroups] = useState<ChatGroup[]>([]);
+    const router = useRouter();
+
+    const formatLastEditedDate = (lastEdited?: string) => {
+        console.log(lastEdited);
+        if (!lastEdited) {
+            return "Unknown date";
+        }
+
+        const parsedDate = parseISO(lastEdited);
+        if (Number.isNaN(parsedDate.getTime())) {
+            return "Unknown date";
+        }
+
+        return format(parsedDate, "do, MMM yyyy");
+    };
     // useEffect(() => {
     //     setAllChatGroups([
     //         {
@@ -46,10 +60,9 @@ export default function ChatHistoryPage() {
                     data={allChatGroups}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({item}) => {
-                        const date = parseISO(item.last_edited)
-                        const formatDate = format(date, "do, MMM yyyy")
+                        console.log(item)
+                        const formatDate = formatLastEditedDate(item.last_edit)
                         return (<TouchableOpacity onPress={() => {
-                                const router = useRouter();
                                 console.log(`Chat group id: ${item.id}`);
                                 router.push({pathname: `/chatPage`, params: {chatGroupId: item.id}})
                             }} className={"flex-1 gap-1 pb-4 px-2"}>

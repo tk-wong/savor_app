@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 import flask_jwt_extended
@@ -71,7 +72,8 @@ def chat():
         return {"message": "Invalid response from model"}, 500
     new_chat_history = ChatHistoryModel(chat_group_id=chat_group_id, user_id=int(flask_jwt_extended.get_jwt_identity()),
                                         prompt=prompt,
-                                        response=response_data)
+                                        response=response_data,
+                                        timestamp=datetime.now(UTC))
     from backend.db_manager import db
     db.session.add(new_chat_history)
     db.session.commit()
@@ -175,6 +177,6 @@ def get_chat_history(group_id):
         ChatHistoryModel.timestamp.desc()).all()
     history_data = [
         {"id": history.id, "prompt": history.prompt, "response": history.response, "image_url": history.image_url,
-         "timestamp": history.timestamp} for
+         "timestamp": history.timestamp.isoformat() if history.timestamp else None} for
         history in chat_history]
     return {"chat_history": history_data}, 200
