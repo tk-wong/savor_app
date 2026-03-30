@@ -13,7 +13,7 @@ def test_get_recipe_by_id(client, sample_login, sample_recipe, sample_recipe_ing
             "id": recipe_id,
             "title": "Recipe 1",
             "description": "Test description 1",
-            "direction": ["Step 1", "Step 2"],
+            "directions": ["Step 1", "Step 2"],
             "ingredients": [
                 {"id": 1, "name": "Ingredient 1", "quantity": "100g"},
                 {"id": 2, "name": "Ingredient 2", "quantity": "200g"},
@@ -49,7 +49,7 @@ def test_get_recipe_by_id_empty_tips(app, client, sample_login, sample_recipe, s
             "id": recipe_id,
             "title": "Recipe 1",
             "description": "Test description 1",
-            "direction": ["Step 1", "Step 2"],
+            "directions": ["Step 1", "Step 2"],
             "ingredients": [
                 {"id": 1, "name": "Ingredient 1", "quantity": "100g"},
                 {"id": 2, "name": "Ingredient 2", "quantity": "200g"},
@@ -70,7 +70,7 @@ def test_get_recipe_by_id_empty_ingredients(client, sample_login, sample_recipe)
             "id": recipe_id,
             "title": "Recipe 2",
             "description": "Test description 2",
-            "direction": ["Step A", "Step B"],
+            "directions": ["Step A", "Step B"],
             "ingredients": [],
             "image_url": "https://example.com/recipe2.jpg",
             "tips": ["Tip A", "Tip B"],

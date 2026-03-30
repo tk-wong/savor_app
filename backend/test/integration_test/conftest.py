@@ -4,7 +4,7 @@ import os
 import pytest
 from dotenv import load_dotenv
 from sqlalchemy.orm import close_all_sessions
-from sqlalchemy_utils import database_exists, drop_database, create_database
+from sqlalchemy_utils import database_exists, create_database
 from werkzeug.security import generate_password_hash
 
 from backend import create_app
@@ -17,32 +17,29 @@ from backend.models.user_model import User
 
 @pytest.fixture(scope='session', autouse=True)
 def load_env():
-    load_dotenv(os.path.join(os.path.dirname(__file__), ".env_test"))
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env_test"), override=True)
+    # Keep integration runs stable even if shell/session exports other modes.
+    os.environ["DROP_DB_ON_STARTUP"] = "0"
 
 
 @pytest.fixture()
 def app():
     app = create_app(config=os.path.join(os.path.dirname(__file__), "test_config.py"))
-    from backend.db_manager import db
 
-    # Ensure database is created before tests
+    # Ensure database exists before tests. Tables are already created in create_app().
     with app.app_context():
         if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
             create_database(app.config['SQLALCHEMY_DATABASE_URI'])
-        db.create_all()
 
     yield app
 
-    # Cleanup the database after tests
+    # Cleanup schema data after each test while reusing the same test DB.
     with app.app_context():
         from backend.db_manager import db
         db.drop_all()
         close_all_sessions()
         db.engine.dispose()
 
-    # Drop the entire database if it exists
-    if database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
-        drop_database(app.config['SQLALCHEMY_DATABASE_URI'])
 
 
 @pytest.fixture()

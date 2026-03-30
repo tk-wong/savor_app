@@ -9,7 +9,7 @@ def test_get_recipe_by_id(client, mock_jwt_required, mock_get_jwt_identity, mock
     response = client.get(f"/api/recipes/{recipe_id}")
     correct_response = {"recipe": {"id": mock_detail_recipe.id, "title": mock_detail_recipe.title,
                                    "description": mock_detail_recipe.description,
-                                   "direction": mock_detail_recipe.direction.split("\n\n"), "ingredients": [
+                                   "directions": mock_detail_recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.id, "name": ingredient.name, "quantity": recipe_ingredient.quantity} for
             recipe_ingredient, ingredient in mock_detail_ingredients], "image_url": mock_detail_recipe.image_url,
                                    "tips": mock_detail_recipe.tips.split("\n\n")}}
@@ -32,7 +32,7 @@ def test_get_recipe_by_id_empty_tips(client, mock_jwt_required, mock_get_jwt_ide
     response = client.get(f"/api/recipes/{recipe_id}")
     correct_response = {"recipe": {"id": mock_detail_recipe.id, "title": mock_detail_recipe.title,
                                    "description": mock_detail_recipe.description,
-                                   "direction": mock_detail_recipe.direction.split("\n\n"), "ingredients": [
+                                   "directions": mock_detail_recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.id, "name": ingredient.name, "quantity": recipe_ingredient.quantity} for
             recipe_ingredient, ingredient in mock_detail_ingredients], "image_url": mock_detail_recipe.image_url,
                                    "tips": []}}
@@ -47,7 +47,7 @@ def test_get_recipe_by_id_empty_ingredients(client, mock_jwt_required, mock_get_
     response = client.get(f"/api/recipes/{recipe_id}")
     correct_response = {"recipe": {"id": mock_detail_recipe.id, "title": mock_detail_recipe.title,
                                    "description": mock_detail_recipe.description,
-                                   "direction": mock_detail_recipe.direction.split("\n\n"), "ingredients": [],
+                                   "directions": mock_detail_recipe.direction.split("\n\n"), "ingredients": [],
                                    "image_url": mock_detail_recipe.image_url,
                                    "tips": mock_detail_recipe.tips.split("\n\n")}}
     assert response.status_code == 200

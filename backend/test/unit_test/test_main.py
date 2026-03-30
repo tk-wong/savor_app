@@ -214,17 +214,15 @@ class TestMainEnvironmentVariables:
         with pytest.raises(ValueError):
             port = int(os.getenv('PORT', '5000'))
 
-    def test_flask_debug_comparison(self):
+    def test_flask_debug_comparison(self, mocker):
         """Test that FLASK_DEBUG comparison works correctly"""
-        # Test various values
-        assert os.getenv('FLASK_DEBUG', '1') == '1'  # Default
+        mocker.patch.dict(os.environ, {}, clear=True)
+        assert os.getenv('FLASK_DEBUG', '1') == '1'
 
-        # When set to '0'
-        os.environ['FLASK_DEBUG'] = '0'
+        mocker.patch.dict(os.environ, {'FLASK_DEBUG': '0'}, clear=True)
         assert (os.getenv('FLASK_DEBUG', '1') == '1') is False
 
-        # When set to '1'
-        os.environ['FLASK_DEBUG'] = '1'
+        mocker.patch.dict(os.environ, {'FLASK_DEBUG': '1'}, clear=True)
         assert (os.getenv('FLASK_DEBUG', '1') == '1') is True
 
     def test_app_mode_alternatives(self):
@@ -393,6 +391,7 @@ class TestMainAppRunCall:
 
     def test_app_run_called_with_correct_debug_type(self, mocker):
         """Test that app.run() is called with debug as boolean"""
+        mocker.patch.dict(os.environ, {'FLASK_DEBUG': '1'}, clear=True)
         # The debug parameter must be a boolean
         debug_value = os.getenv('FLASK_DEBUG', '1') == '1'
 
@@ -409,6 +408,7 @@ class TestMainAppRunCall:
 
     def test_app_run_parameters_from_main_py(self, mocker):
         """Test exact parameters used in main.py app.run() call"""
+        mocker.patch.dict(os.environ, {'PORT': '5000', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
         # Simulate the exact parameters as used in main.py
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -421,7 +421,7 @@ class TestMainAppRunCall:
 
     def test_app_run_with_custom_port_parameter(self, mocker):
         """Test app.run() parameter resolution with custom PORT"""
-        mocker.patch.dict(os.environ, {'PORT': '8080'})
+        mocker.patch.dict(os.environ, {'PORT': '8080', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
 
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -445,7 +445,7 @@ class TestMainAppRunCall:
 
     def test_app_run_with_custom_host(self, mocker):
         """Test app.run() parameter resolution with custom HOST"""
-        mocker.patch.dict(os.environ, {'HOST': '127.0.0.1'})
+        mocker.patch.dict(os.environ, {'HOST': '127.0.0.1', 'FLASK_DEBUG': '1', 'PORT': '5000'}, clear=True)
 
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -516,8 +516,9 @@ class TestMainAppRunCall:
         assert isinstance(debug, bool)
         assert isinstance(host, str)
 
-    def test_app_run_default_values_match_main_py(self):
+    def test_app_run_default_values_match_main_py(self, mocker):
         """Test that default values match exactly what's in main.py"""
+        mocker.patch.dict(os.environ, {}, clear=True)
         # When env vars are not set, these should be the defaults
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'

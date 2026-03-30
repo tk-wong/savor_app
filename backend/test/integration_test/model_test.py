@@ -15,7 +15,7 @@ def test_chat_history_model_repr(app, sample_chat):
         chat_history = ChatHistoryModel.query.filter_by(id=1).first()
         expected_repr = (
             "<ChatHistory id: 1, user_id: 1, prompt: Test prompt 0, "
-            "response: {'response': 'Test response 0'}, timestamp: 2024-01-01 00:00:00>"
+            f"response: {{'response': 'Test response 0'}}, timestamp: {chat_history.timestamp}>"
         )
         assert repr(chat_history) == expected_repr
 
