@@ -61,7 +61,7 @@ def get_recipe_by_id(recipe_id):
         Ingredient, RecipeIngredient.ingredient_id == Ingredient.id
     ).filter(RecipeIngredient.recipe_id == recipe_id).all()
     message = {"id": recipe.id, "title": recipe.title, "description": recipe.description,
-               "direction": recipe.direction.split("\n\n"), "ingredients": [
+               "directions": recipe.direction.split("\n\n"), "ingredients": [
             {"id": ingredient.id, "name": ingredient.name, "quantity": recipe_ingredient.quantity} for
             recipe_ingredient, ingredient in ingredients], "image_url": recipe.image_url,
                "tips": recipe.tips.split("\n\n") if recipe.tips else []}

@@ -189,7 +189,7 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     _log("info", "Start writing recipe to database", user_id=user_id, chat_group_id=chat_group.id,
          recipe_title=recipe_title)
     new_recipe = Recipe(title=recipe_title, description=recipe_data.get("description"),
-                        direction="\n\n".join(recipe_data.get("direction", [])),
+                        direction="\n\n".join(recipe_data.get("directions", [])),
                         create_user_id=int(flask_jwt_extended.get_jwt_identity()),
                         tips="\n\n".join(recipe_data.get("tips", [])), image_url=image_url)
     from backend.db_manager import db
@@ -198,7 +198,7 @@ def _handle_recipe_response(chat_group: Any | None, new_chat_history: ChatHistor
     _log("info", "Recipe write flushed", user_id=user_id, chat_group_id=chat_group.id, recipe_id=new_recipe.id)
     for ingredient in recipe_data.get("ingredients", []):
         from backend.models.ingredient_model import Ingredient
-        ingredient_name = ingredient.get("ingredient_name") or ingredient.get("name")
+        ingredient_name = ingredient.get("name")
         if not ingredient_name:
             _log("warning", "Skipped recipe ingredient", user_id=user_id, chat_group_id=chat_group.id,
                  reason="missing_ingredient_name")
