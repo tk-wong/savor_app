@@ -19,7 +19,7 @@ class RecipeGenerationStrategy(ChainStrategy):
         "prompt_type": "recipe",
         "recipe": {{
         "title": "the title of the recipe you created",
-        "ingredients": ["a list of ingredients in JSON format: {{"ingredient_name": "the name of the ingredient in singular form. Specify how to process it like 'sliced'", "quantity": "the quantity of the ingredient needed for the recipe. The quantity should be in a standard format, such as '1 cup', '2 tablespoons', '3 ounces', etc. Do not add ingredient name"}}.],
+        "ingredients": ["a list of ingredients in JSON format: {{"name": "the name of the ingredient in singular form. Specify how to process it like 'sliced'", "quantity": "the quantity of the ingredient needed for the recipe. The quantity should be in a standard format, such as '1 cup', '2 tablespoons', '3 ounces', etc. Do not add ingredient name"}}.],
         "directions": ["a list of detailed directions for cooking the dish, which should be clear and easy to follow even for a beginner, and should include any necessary cooking tips or techniques that are relevant to the recipe. 
         Do not include the index of the direction step in the direction description. You can use markdown format to make the directions more clear and organized."],
         "description": "a detailed description of the flavor and texture of the dish after it is finished, which should be vivid and appetizing, and should give the user a clear idea of what to expect from the dish when they cook it",
