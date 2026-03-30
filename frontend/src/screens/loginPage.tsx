@@ -87,13 +87,13 @@ function LoginView() {
 
             </View>
         </View>
-
+{/* 
         <TouchableOpacity onPress={() => {
             // for debugging
             router.push("/functionTestingPage")
         }} className={"global-button bg-gray-400"}>
             <Text className={"global-text"}>Function testing page</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
     </SafeAreaView>;
 }

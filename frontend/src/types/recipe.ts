@@ -15,6 +15,6 @@ export interface Recipe {
 }
 
 export interface Ingredient {
-  ingredient_name: string;
+  name: string;
   quantity: string;
 }

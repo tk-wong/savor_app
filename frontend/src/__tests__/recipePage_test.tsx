@@ -94,8 +94,8 @@ describe("RecipePage", () => {
       description: "Delicious food",
       image_url: "https://cdn.test/recipe.png",
       ingredients: [
-        { ingredient_name: "Eggs", quantity: "2" },
-        { ingredient_name: "Flour", quantity: "1 cup" },
+        { name: "Eggs", quantity: "2" },
+        { name: "Flour", quantity: "1 cup" },
       ],
       directions: ["Step one", "Step two"],
       tips: ["Be patient"],
@@ -180,10 +180,10 @@ describe("RecipePage", () => {
         ingredients: [
           "Raw ingredient",
           {},
-          { ingredient_name: "Flour", quantity: "1 cup" },
-          { ingredient_name: "Salt", quantity: "" },
-          { ingredient_name: "", quantity: "2 tbsp" },
-          { ingredient_name: "", quantity: "" },
+          { name: "Flour", quantity: "1 cup" },
+          { name: "Salt", quantity: "" },
+          { name: "", quantity: "2 tbsp" },
+          { name: "", quantity: "" },
         ],
         directions: ["Step one"],
         tips: ["Tip"],
@@ -212,7 +212,7 @@ describe("RecipePage", () => {
         title: "Api Prefix Recipe",
         description: "Desc",
         image_url: "/api/static/images/dedupe.png",
-        ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+        ingredients: [{ name: "Egg", quantity: "1" }],
         directions: ["Step one"],
         tips: ["Tip"],
       },
@@ -226,6 +226,40 @@ describe("RecipePage", () => {
 
     const images = UNSAFE_getAllByType(Image);
     expect(images[0].props.source.uri).toBe("https://api.test/api/static/images/dedupe.png");
+  });
+
+  it("normalizes malformed recipe fields and ignores empty speech result payloads", async () => {
+    mockedGetRecipeById.mockResolvedValueOnce({
+      recipe: {
+        id: undefined,
+        title: undefined,
+        description: undefined,
+        image_url: undefined,
+        ingredients: {},
+        directions: {},
+        tips: {},
+      },
+    } as any);
+
+    const { UNSAFE_getAllByType } = render(React.createElement(RecipePage));
+
+    await waitFor(() => {
+      expect(screen.getByText("Recipe not found")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText("start voice interaction"));
+    fireEvent.press(screen.getByTestId("ant-plus"));
+
+    await act(async () => {
+      const cb = mockSpeechCallbacks.result;
+      cb?.({ results: [{}] });
+    });
+
+    expect(mockSpeak).not.toHaveBeenCalled();
+    expect(mockStartListening).toHaveBeenCalled();
+
+    const images = UNSAFE_getAllByType(Image);
+    expect(images[0].props.source.uri).toBe("https://blocks.astratic.com/img/general-img-square.png");
   });
 
   it("starts and stops voice interaction from the main toggle", async () => {

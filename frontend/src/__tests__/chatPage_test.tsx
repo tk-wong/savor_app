@@ -5,7 +5,6 @@ import ChatPage, { renderSend } from "../screens/chatPage";
 import { getChatHistoryByGroupId, getNewChatGroup, sendMessage } from "../api/chat";
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
 
 jest.mock("nativewind", () => ({
   cssInterop: jest.fn(),
@@ -273,7 +272,7 @@ describe("ChatPage", () => {
       ],
     } as any);
 
-    const firstRender = render(React.createElement(ChatPage));
+    render(React.createElement(ChatPage));
 
     await waitFor(() => {
       expect(mockedGetChatHistoryByGroupId).toHaveBeenCalledWith(7);
@@ -292,7 +291,7 @@ describe("ChatPage", () => {
   it("logs when no chat group param exists", () => {
     mockedUseLocalSearchParams.mockReturnValue({});
 
-    const firstRender = render(React.createElement(ChatPage));
+    render(React.createElement(ChatPage));
 
     expect(logMock).toHaveBeenCalledWith("No chat group ID in params, starting with new chat.");
   });
@@ -301,7 +300,7 @@ describe("ChatPage", () => {
     mockedGetNewChatGroup.mockResolvedValue({ group_id: 42 } as any);
     mockedSendMessage.mockResolvedValue({ prompt_type: "question", answer: "Hello user" } as any);
 
-    const firstRender = render(React.createElement(ChatPage));
+    render(React.createElement(ChatPage));
     fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
 
     await waitFor(() => {
@@ -321,14 +320,14 @@ describe("ChatPage", () => {
         id: 1,
         title: "Tomato Soup",
         description: "A cozy soup",
-        ingredients: [{ ingredient_name: "Tomato", quantity: "2" }],
+        ingredients: [{ name: "Tomato", quantity: "2" }],
         directions: ["Boil", "Serve"],
         tips: ["Use ripe tomatoes"],
         image_url: "/api/static/images/soup.png",
       },
     } as any);
 
-    const firstRender = render(React.createElement(ChatPage));
+    render(React.createElement(ChatPage));
     fireEvent.press(screen.getByTestId("gifted-send-trimmed"));
 
     await waitFor(() => {
@@ -381,10 +380,10 @@ describe("ChatPage", () => {
             ingredients: [
               "Raw\\ntext",
               {},
-              { ingredient_name: "Flour", quantity: "1 cup" },
-              { ingredient_name: "Salt", quantity: "" },
-              { ingredient_name: "", quantity: "2 tbsp" },
-              { ingredient_name: "", quantity: "" },
+              { name: "Flour", quantity: "1 cup" },
+              { name: "Salt", quantity: "" },
+              { name: "", quantity: "2 tbsp" },
+              { name: "", quantity: "" },
             ],
             directions: ["Stir"],
             tips: ["Tip A"],
@@ -432,7 +431,7 @@ describe("ChatPage", () => {
               id: 2,
               title: "Stored",
               description: "Stored desc",
-              ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+              ingredients: [{ name: "Egg", quantity: "1" }],
               directions: ["Cook"],
               tips: ["Serve"],
               image_url: "https://cdn.test/stored.png",
@@ -453,13 +452,46 @@ describe("ChatPage", () => {
           response: "plain text",
           timestamp: "2026-01-01T00:00:03.000Z",
         },
+        {
+          id: 5,
+          prompt: "Q5",
+          response: JSON.stringify({
+            prompt_type: "recipe",
+            recipe: {
+              id: 5,
+              title: "No Image Stored",
+              description: "No image",
+              ingredients: [],
+              directions: [],
+              tips: [],
+            },
+          }),
+          timestamp: "2026-01-01T00:00:04.000Z",
+        },
+        {
+          id: 6,
+          prompt: "Q6",
+          response: JSON.stringify({
+            prompt_type: "recipe",
+            recipe: {
+              id: 6,
+              title: "Use Message Image",
+              description: "Use image_url from message",
+              ingredients: [],
+              directions: [],
+              tips: [],
+            },
+          }),
+          timestamp: "2026-01-01T00:00:05.000Z",
+          image_url: "https://cdn.test/message-image.png",
+        },
       ],
     } as any);
 
     render(React.createElement(ChatPage));
 
     await waitFor(() => {
-      expect(mockLatestGiftedChatProps.messages).toHaveLength(8);
+      expect(mockLatestGiftedChatProps.messages).toHaveLength(12);
     });
 
     const messageTexts = mockLatestGiftedChatProps.messages.map((m: any) => m.text);
@@ -470,6 +502,12 @@ describe("ChatPage", () => {
 
     const fallbackImageMessage = mockLatestGiftedChatProps.messages.find((m: any) => m._id === 3.5);
     expect(fallbackImageMessage?.image).toBe("https://cdn.test/fallback-image.png");
+
+    const placeholderImageMessage = mockLatestGiftedChatProps.messages.find((m: any) => m._id === 5.5);
+    expect(placeholderImageMessage?.image).toBe("https://blocks.astratic.com/img/general-img-square.png");
+
+    const messageImageFallback = mockLatestGiftedChatProps.messages.find((m: any) => m._id === 6.5);
+    expect(messageImageFallback?.image).toBe("https://cdn.test/message-image.png");
   });
 
   it("covers history parsing edge cases for malformed and object responses", async () => {
@@ -541,7 +579,7 @@ describe("ChatPage", () => {
         id: 67,
         title: "No Image",
         description: "desc",
-        ingredients: [{ ingredient_name: "Egg", quantity: "1" }],
+        ingredients: [{ name: "Egg", quantity: "1" }],
         directions: ["Cook"],
         tips: ["Serve"],
         image_url: undefined,
@@ -565,7 +603,7 @@ describe("ChatPage", () => {
         id: 91,
         title: "Envless",
         description: "desc",
-        ingredients: [{ ingredient_name: "X", quantity: "1" }],
+        ingredients: [{ name: "X", quantity: "1" }],
         directions: ["Do"],
         tips: ["Tip"],
         image_url: "/api/static/images/envless.png",

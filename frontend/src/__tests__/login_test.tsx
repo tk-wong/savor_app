@@ -102,11 +102,4 @@ describe("Login screen", () => {
     expect(router.navigate).toHaveBeenCalledWith("/createUserPage");
   });
 
-  it("navigates to function testing page from debug button", () => {
-    render(<LoginPage />);
-
-    fireEvent.press(screen.getByText("Function testing page"));
-
-    expect(router.push).toHaveBeenCalledWith("/functionTestingPage");
-  });
 });

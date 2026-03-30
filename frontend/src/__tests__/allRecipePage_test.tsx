@@ -1,10 +1,9 @@
 import React from "react";
-import { Alert, Image, Platform, View } from "react-native";
+import { Alert, Image } from "react-native";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import AllRecipePage from "../screens/allRecipePage";
 import { getAllRecipes } from "../api/recipe";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 jest.mock("../api/recipe", () => ({
   getAllRecipes: jest.fn(),
@@ -33,26 +32,20 @@ jest.mock("react-native-safe-area-context", () => {
   const { View } = require("react-native");
   return {
     SafeAreaView: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
-    useSafeAreaInsets: jest.fn(() => ({ top: 0, right: 0, bottom: 0, left: 0 })),
   };
 });
 
 describe("AllRecipePage", () => {
   const mockedGetAllRecipes = getAllRecipes as jest.MockedFunction<typeof getAllRecipes>;
-  const mockedUseSafeAreaInsets = useSafeAreaInsets as jest.Mock;
   const alertMock = jest.spyOn(Alert, "alert");
-  const originalPlatformOS = Platform.OS;
   const originalBackendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedUseSafeAreaInsets.mockReturnValue({ top: 0, right: 0, bottom: 0, left: 0 });
-    Object.defineProperty(Platform, "OS", { configurable: true, value: originalPlatformOS });
     process.env.EXPO_PUBLIC_BACKEND_URL = "https://api.test/api";
   });
 
   afterEach(() => {
-    Object.defineProperty(Platform, "OS", { configurable: true, value: originalPlatformOS });
     process.env.EXPO_PUBLIC_BACKEND_URL = originalBackendUrl;
   });
 
@@ -142,25 +135,16 @@ describe("AllRecipePage", () => {
     });
   });
 
-  it("renders android bottom spacer using safe-area inset", async () => {
-    Object.defineProperty(Platform, "OS", { configurable: true, value: "android" });
-    mockedUseSafeAreaInsets.mockReturnValue({ top: 0, right: 0, bottom: 24, left: 0 });
-    mockedGetAllRecipes.mockResolvedValue({ recipes: [] } as any);
+  it("handles malformed recipe payloads by surfacing an unknown fetch error", async () => {
+    mockedGetAllRecipes.mockResolvedValue({ recipes: {} } as any);
 
     render(<AllRecipePage />);
 
     await waitFor(() => {
-      expect(mockedGetAllRecipes).toHaveBeenCalled();
+      expect(alertMock).toHaveBeenCalledWith("Error: Unknown", expect.stringContaining("map"));
     });
-
-    const spacerExists = screen.UNSAFE_getAllByType(View).some((node) => {
-      const style = node.props.style;
-      if (Array.isArray(style)) return style.some((s) => s?.height === 24);
-      return style?.height === 24;
-    });
-
-    expect(spacerExists).toBe(true);
   });
+
 
   it("shows default unknown error details when request rejects without status/message", async () => {
     mockedGetAllRecipes.mockRejectedValue({});

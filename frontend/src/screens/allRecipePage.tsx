@@ -1,23 +1,21 @@
-import {useHeaderHeight} from "@react-navigation/elements";
-import {router, useFocusEffect} from "expo-router";
-import React, {useCallback, useMemo, useState} from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     Alert,
     FlatList,
     Image,
     ImageSourcePropType,
     ListRenderItem,
-    Platform,
+    StyleSheet,
     Text,
     TouchableOpacity,
-    useWindowDimensions,
-    View
+    useWindowDimensions
 } from "react-native";
-import {SafeAreaView, useSafeAreaInsets} from "react-native-safe-area-context";
-import {ApiRequestError} from "../api/apiRequestError";
-import {getAllRecipes} from "../api/recipe";
-import {Recipe} from "../types";
-import {StyledHeader} from "@/src/components/styledHeader";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ApiRequestError } from "../api/apiRequestError";
+import { getAllRecipes } from "../api/recipe";
+import { Recipe } from "../types";
+import { StyledHeader } from "@/src/components/styledHeader";
 
 const buildImageUrl = (base: string, imagePath?: string | null) => {
     if (!imagePath) {
@@ -39,17 +37,10 @@ const buildImageUrl = (base: string, imagePath?: string | null) => {
 };
 
 export default function AllRecipePage() {
-    const headerHeight = useHeaderHeight();
-    const insets = useSafeAreaInsets();
-    // const keyboardVerticalOffset = Platform.select({
-    //     ios: headerHeight + insets.bottom,
-    //     android: headerHeight, // Android often handles it better with just the header height
-    // });
     return (<>
-        <StyledHeader title={"All Recipes"}/>
-        <SafeAreaView className={"bg-surface"}>
-            <RecipeCard/>
-            {Platform.OS === 'android' && <View style={{height: insets.bottom}}/>}
+        <StyledHeader title={"All Recipes"} />
+        <SafeAreaView className={"bg-surface flex-1"}>
+            <RecipeCard />
         </SafeAreaView>
     </>)
 }
@@ -62,7 +53,7 @@ interface RecipeCardItem {
 
 function RecipeCard() {
     const [recipeList, setRecipeList] = useState<RecipeCardItem[]>([]);
-    const {width} = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const numColumns = useMemo(() => {
         const idealItemWidth = 180; // most phones can fit 2 items at 180px, tablets can fit more
         const columns = Math.floor(width / idealItemWidth);
@@ -72,12 +63,13 @@ function RecipeCard() {
         console.log("Fetching all recipes");
         const placeholderImage = "https://blocks.astratic.com/img/general-img-landscape.png";
         getAllRecipes().then((data) => {
+            console.log(`Fetched recipe count: ${Array.isArray(data?.recipes) ? data.recipes.length : 0}`);
             const formattedRecipes = data.recipes.map((recipe: Recipe) => {
                 const image_uri = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url) ?? placeholderImage;
                 return {
                     id: recipe.id,
                     name: recipe.title,
-                    image: {uri:image_uri},
+                    image: { uri: image_uri },
                 }
             });
             setRecipeList(formattedRecipes);
@@ -86,26 +78,34 @@ function RecipeCard() {
             Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching all recipes.");
         })
     }, []));
-    const renderItem: ListRenderItem<RecipeCardItem> = ({item}) => {
-        return <TouchableOpacity onPress={() => {
-            console.log(`Recipe id: ${item.id}`);
-            router.push({pathname: `/recipePage`, params: {id: item.id}})
-        }
-        }>
-            <Image source={item.image} className={"max-w-full w-full aspect-square rounded-xl"}/>
+    const renderItem: ListRenderItem<RecipeCardItem> = ({ item }) => {
+        return <TouchableOpacity
+            style={styles.card}
+            onPress={() => {
+                console.log(`Recipe id: ${item.id}`);
+                router.push({ pathname: `/recipePage`, params: { id: item.id } })
+            }
+            }>
+            <Image source={item.image} className={"max-w-full w-full aspect-square rounded-xl"} />
             <Text className={"mt-2 text-center text-sm global-text text-on-surface"}>{item.name}</Text>
         </TouchableOpacity>
     };
     return (
         <FlatList data={recipeList} renderItem={renderItem} numColumns={numColumns}
-                  key={numColumns}
-                  keyExtractor={(item) => item.id.toString()}
-                  contentContainerClassName={"gap-4 px-4 pb-6"}
-                  columnWrapperClassName={"gap-4"}
-                  className={"color-surface"}
+            key={numColumns}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
+            contentContainerClassName={"gap-4 px-4 pb-6"}
+            columnWrapperClassName={"gap-4"}
+            className={"color-surface flex-1"}
         />
     )
 }
+
+const styles = StyleSheet.create({
+    card: {
+        flex: 1,
+    },
+});
 
 
 

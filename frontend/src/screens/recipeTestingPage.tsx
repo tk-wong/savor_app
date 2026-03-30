@@ -1,17 +1,17 @@
-import {router, useLocalSearchParams} from "expo-router";
-import {useRef, useState} from "react";
-import {Image, ScrollView, Text, TouchableOpacity, View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {DetailRecipe} from "../types";
+import { router, useLocalSearchParams } from "expo-router";
+import { useRef, useState } from "react";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { DetailRecipe } from "../types";
 import AntDesign from '@expo/vector-icons/AntDesign';
-import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
+import { useTextToSpeech } from "@/src/hooks/useTextToSpeech";
 import {
     ExpoSpeechRecognitionModule,
     ExpoSpeechRecognitionResultEvent,
     useSpeechRecognitionEvent
 } from "expo-speech-recognition";
-import {useSpeechToText} from "@/src/hooks/useSpeechToText";
-import {StyledHeader} from "@/src/components/styledHeader";
+import { useSpeechToText } from "@/src/hooks/useSpeechToText";
+import { StyledHeader } from "@/src/components/styledHeader";
 // interface SampleDetailRecipe {
 //     id: number;
 //     name: string;
@@ -58,8 +58,8 @@ export default function RecipePage() {
     const [stepIndex, setStepIndex] = useState(-1);
     const [listening, setListening] = useState(false);
     const [voiceTranscript, setVoiceTranscript] = useState("");
-    const {speak, stopSpeaking} = useTextToSpeech();
-    const {startListening, stopListening} = useSpeechToText();
+    const { speak, stopSpeaking } = useTextToSpeech();
+    const { startListening, stopListening } = useSpeechToText();
 
     // small helper and lock to avoid races when toggling between TTS and STT
     const ttsLockRef = useRef(false);
@@ -191,11 +191,11 @@ export default function RecipePage() {
     const recipe_uri = recipe.image_url ? process.env.EXPO_PUBLIC_BACKEND_URL + recipe.image_url : placeholder_image
     return (
         <>
-            <StyledHeader title={recipe.title}/>
+            <StyledHeader title={recipe.title} />
             <SafeAreaView>
                 <ScrollView className={"px-4 pb-safe-8 safe-pb-12"}>
-                    <Image source={{uri: recipe_uri}}
-                           className={"max-w-full w-full aspect-square rounded-xl p-safe-or-1"}/>
+                    <Image source={{ uri: recipe_uri }}
+                        className={"max-w-full w-full aspect-square rounded-xl p-safe-or-1"} />
                     <Text
                         className={"global-text !font-italic !text-m text-on-surface text-center pb-4"}>{recipe.description}</Text>
                     <Text className={"global-text !font-bold !text-xl text-on-surface"}>Ingredients:</Text>
@@ -206,7 +206,7 @@ export default function RecipePage() {
                     {recipe.directions.map((instruction, index) => {
                         const currentStepClass = stepIndex == index ? "text-red-500" : "text-on-surface";
                         return (<Text key={index}
-                                      className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
+                            className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
                     })}
                     <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Tips:</Text>
                     {recipe.tips.map((tip, index) => (
@@ -232,35 +232,35 @@ export default function RecipePage() {
                         <Text className={"global-text color-on-surface"}>Step Navigations:</Text>
                         <View className={"flex-row justify-center align-middle"}>
                             <TouchableOpacity onPress={speakNextStep}
-                                            className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
-                                              disabled={stepIndex >= recipe.directions.length - 1}>
-                                <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"}/>
+                                className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
+                                disabled={stepIndex >= recipe.directions.length - 1}>
+                                <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={speakPreviousStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}
-                                              disabled={stepIndex <= 0}>
-                                <AntDesign name="minus" size={24} className={"!color-on-secondary align-middle"}/>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}
+                                disabled={stepIndex <= 0}>
+                                <AntDesign name="minus" size={24} className={"!color-on-secondary align-middle"} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={repeatStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Repeat</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={resetStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Reset</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={stopSpeaking}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Stop</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                     <View className={"pb-6 mb-4"}>
-                    <TouchableOpacity onPress={() => {
-                        router.back();
-                    }} className={"global-button !bg-primary-container !p-2.5-or-safe !m-2.5-or-safe "}>
-                        <Text className={"global-text color-on-primary-container"}>Back</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity onPress={() => {
+                            router.back();
+                        }} className={"global-button !bg-primary-container !p-2.5-or-safe !m-2.5-or-safe "}>
+                            <Text className={"global-text color-on-primary-container"}>Back</Text>
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </SafeAreaView>

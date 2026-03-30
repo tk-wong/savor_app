@@ -1,8 +1,8 @@
-import {Feather} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
-import {useHeaderHeight} from '@react-navigation/elements';
-import React, {useCallback, useState} from 'react';
-import {Alert, Platform, useColorScheme, View} from "react-native";
+import { useHeaderHeight } from '@react-navigation/elements';
+import React, { useCallback, useState } from 'react';
+import { Alert, Platform, useColorScheme, View } from "react-native";
 import {
     Actions,
     ActionsProps,
@@ -14,35 +14,35 @@ import {
     Send,
     SendProps
 } from 'react-native-gifted-chat';
-import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {getChatHistoryByGroupId, getNewChatGroup, sendMessage} from "../api/chat";
-import {ApiRequestError} from "../api/apiRequestError";
-import {ExpoSpeechRecognitionModule, useSpeechRecognitionEvent} from "expo-speech-recognition";
-import {ExpoSpeechRecognitionPermissionResponse} from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getChatHistoryByGroupId, getNewChatGroup, sendMessage } from "../api/chat";
+import { ApiRequestError } from "../api/apiRequestError";
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
+import { ExpoSpeechRecognitionPermissionResponse } from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
-import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
-import {useFocusEffect, useLocalSearchParams, useRouter} from "expo-router";
-import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
-import {ChatResponse} from "@/src/types/response";
-import {DetailRecipe, Ingredient} from "@/src/types";
-import {cssInterop} from "nativewind";
-import {StyledHeader} from "@/src/components/styledHeader";
+import { useTextToSpeech } from "@/src/hooks/useTextToSpeech";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { ChatResponse } from "@/src/types/response";
+import { DetailRecipe, Ingredient } from "@/src/types";
+import { cssInterop } from "nativewind";
+import { StyledHeader } from "@/src/components/styledHeader";
 
 cssInterop(MaterialDesignIcons, {
     className: {
         target: "style",
-        nativeStyleToProp: {color: true},
+        nativeStyleToProp: { color: true },
     },
 })
 
-function HeaderRightButton({clearChat}: { clearChat: () => void }) {
+function HeaderRightButton({ clearChat }: { clearChat: () => void }) {
     const router = useRouter()
     return (
         <View className={"flex-row gap-2 p-2"}>
             <AntDesign name={"history"} size={24} onPress={() => router.navigate("/chatHistoryPage")}
-                       className={"!color-on-surface"} accessibilityHint={"chat history"}/>
+                className={"!color-on-surface"} accessibilityHint={"chat history"} />
             <MaterialDesignIcons name={"chat-plus-outline"} size={24} onPress={clearChat}
-                                 accessibilityHint={"new chat"} className={"!color-on-surface"}/>
+                accessibilityHint={"new chat"} className={"!color-on-surface"} />
         </View>
     );
 }
@@ -59,6 +59,7 @@ const toBulletList = (items?: string[]) => {
 };
 
 const toNumberedList = (items?: string[]) => {
+    console.log("Formatting numbered list:", items);
     if (!Array.isArray(items) || items.length === 0) {
         return "1. N/A";
     }
@@ -68,6 +69,7 @@ const toNumberedList = (items?: string[]) => {
 };
 
 const toIngredientList = (ingredients?: Array<Ingredient | string>) => {
+    console.log("Formatting ingredient list:", ingredients);
     if (!Array.isArray(ingredients) || ingredients.length === 0) {
         return "- N/A";
     }
@@ -77,7 +79,7 @@ const toIngredientList = (ingredients?: Array<Ingredient | string>) => {
             return `- ${normalizeEscapedNewlines(ingredient.trim())}`;
         }
 
-        const ingredientName = normalizeEscapedNewlines(String(ingredient?.ingredient_name ?? "").trim());
+        const ingredientName = normalizeEscapedNewlines(String(ingredient?.name ?? "").trim());
         const quantity = normalizeEscapedNewlines(String(ingredient?.quantity ?? "").trim());
 
         if (quantity && ingredientName) {
@@ -140,6 +142,8 @@ const buildImageUrl = (base: string, imagePath?: string) => {
     return `${normalizedBase}${normalizedPath}`;
 };
 
+const placeholderRecipeImageUrl = "https://blocks.astratic.com/img/general-img-square.png";
+
 //
 // const useMessage = (): [IMessage[], Dispatch<SetStateAction<IMessage[]>>]  => {
 //     const [messages, setMessages] = useState<IMessage[]>([]);
@@ -179,12 +183,14 @@ export default function ChatPage() {
             setChatGroupId(initialChatGroupId);
             console.log("Loaded chat group ID from params:", initialChatGroupId);
             getChatHistoryByGroupId(initialChatGroupId).then((response) => {
+                const backendBaseUrl = process.env.EXPO_PUBLIC_BACKEND_URL ?? "";
                 const history = Array.isArray(response?.chat_history) ? response.chat_history : [];
-                const sortedHistory = history.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                const sortedHistory = history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 const formattedMessages = sortedHistory.map((msg) => {
                     console.log(msg);
                     let responseText: string = "";
                     let responseImage: string | undefined = undefined;
+                    let isRecipeMessage = false;
 
                     // Parse stored response JSON and format it like backend responses
                     let storedResponse;
@@ -198,15 +204,24 @@ export default function ChatPage() {
                     if (storedResponse?.prompt_type === "question") {
                         responseText = normalizeEscapedNewlines(storedResponse.answer || "");
                     } else if (storedResponse?.prompt_type === "recipe") {
+                        isRecipeMessage = true;
                         const recipe = storedResponse.recipe;
+                        console.log("recipe:", recipe)
                         if (recipe) {
-                            responseImage = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url);
+                            responseImage = buildImageUrl(backendBaseUrl, recipe.image_url ?? msg.image_url);
                             responseText = buildRecipeMarkdown(recipe);
                         } else {
                             responseText = "";
                         }
                     } else {
                         responseText = typeof msg.response === "string" ? msg.response : JSON.stringify(msg.response);
+                    }
+
+                    if (!responseImage) {
+                        responseImage = buildImageUrl(backendBaseUrl, msg.image_url);
+                    }
+                    if (!responseImage && isRecipeMessage) {
+                        responseImage = placeholderRecipeImageUrl;
                     }
 
                     return ([
@@ -218,7 +233,7 @@ export default function ChatPage() {
                                 _id: "bot",
                                 name: 'SavorBot',
                             },
-                            image: responseImage ?? msg.image_url ?? undefined,
+                            image: responseImage,
                         },
                         {
                             _id: msg.id,
@@ -258,7 +273,7 @@ export default function ChatPage() {
         setListening(false)
     });
 
-    const {speak} = useTextToSpeech();
+    const { speak } = useTextToSpeech();
     const onSend = useCallback((newMessages: IMessage[] = []) => {
         const outgoingMessage = newMessages[0];
         const messageText = typeof outgoingMessage?.text === "string" ? outgoingMessage.text.trim() : "";
@@ -302,6 +317,9 @@ export default function ChatPage() {
                     }
 
                     recipe_url = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url);
+                    if (!recipe_url) {
+                        recipe_url = placeholderRecipeImageUrl;
+                    }
                     response_text = buildRecipeMarkdown(recipe);
                 } else {
                     rollbackOptimisticMessage();
@@ -399,15 +417,15 @@ export default function ChatPage() {
                     marginBottom: 0,
                 }}
                 icon={loadIcon}
-                // options={{
-                //     'Choose From Library': () => {
-                //         console.log('Choose From Library')
-                //     },
-                //     Cancel: () => {
-                //         console.log('Cancel')
-                //     },
-                // }}
-                // optionTintColor={isDark ? '#ffffff' : '#222B45'}
+            // options={{
+            //     'Choose From Library': () => {
+            //         console.log('Choose From Library')
+            //     },
+            //     Cancel: () => {
+            //         console.log('Cancel')
+            //     },
+            // }}
+            // optionTintColor={isDark ? '#ffffff' : '#222B45'}
             />
         )
     })
@@ -448,9 +466,9 @@ export default function ChatPage() {
                 headerRight: () => <HeaderRightButton clearChat={() => {
                     setChatGroupId(null);
                     setMessages([])
-                }}/>
+                }} />
 
-            }}/>
+            }} />
             <View className={"flex-1"}>
                 <GiftedChat
                     messages={messages}
@@ -460,7 +478,7 @@ export default function ChatPage() {
                     user={{
                         _id: 1,
                     }}
-                    keyboardAvoidingViewProps={{keyboardVerticalOffset: keyboardVerticalOffset}}
+                    keyboardAvoidingViewProps={{ keyboardVerticalOffset: keyboardVerticalOffset }}
                     renderSend={renderSend}
                     // renderComposer={renderComposer}
                     renderActions={renderActions}
@@ -481,7 +499,7 @@ export default function ChatPage() {
                                 backgroundColor: primaryColor,
                                 padding: 6,
                             }
-                        }}/>)
+                        }} />)
                     }}
                     timeTextStyle={{
                         left: {
@@ -492,14 +510,14 @@ export default function ChatPage() {
                         }
                     }}
                     renderDay={(props) => {
-                        return <Day {...props} wrapperStyle={{backgroundColor: surfaceContainerColor}} textProps={{
+                        return <Day {...props} wrapperStyle={{ backgroundColor: surfaceContainerColor }} textProps={{
                             style: {
                                 color: onSurfaceColor,
                             }
-                        }}/>
+                        }} />
                     }}
                 />
-                {Platform.OS === 'android' && <View/>}
+                {Platform.OS === 'android' && <View />}
 
             </View>
         </>
@@ -526,7 +544,7 @@ export const renderSend = React.memo((props: SendProps<IMessage>) => (
         }}
     >
         <View className={"items-center justify-center"}>
-            <AntDesign name="send" size={24} className={"!color-on-surface"}/>
+            <AntDesign name="send" size={24} className={"!color-on-surface"} />
         </View>
     </Send>
 ))

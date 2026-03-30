@@ -1,18 +1,18 @@
-import {router, useFocusEffect, useLocalSearchParams} from "expo-router";
-import {useCallback, useRef, useState} from "react";
-import {Image, ScrollView, Text, TouchableOpacity, View} from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {DetailRecipe, Ingredient} from "../types";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useRef, useState } from "react";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { DetailRecipe, Ingredient } from "../types";
 import AntDesign from '@expo/vector-icons/AntDesign';
-import {getRecipeById} from "@/src/api/recipe";
-import {useTextToSpeech} from "@/src/hooks/useTextToSpeech";
+import { getRecipeById } from "@/src/api/recipe";
+import { useTextToSpeech } from "@/src/hooks/useTextToSpeech";
 import {
     ExpoSpeechRecognitionModule,
     ExpoSpeechRecognitionResultEvent,
     useSpeechRecognitionEvent
 } from "expo-speech-recognition";
-import {useSpeechToText} from "@/src/hooks/useSpeechToText";
-import {StyledHeader} from "@/src/components/styledHeader";
+import { useSpeechToText } from "@/src/hooks/useSpeechToText";
+import { StyledHeader } from "@/src/components/styledHeader";
 // interface SampleDetailRecipe {
 //     id: number;
 //     name: string;
@@ -37,30 +37,38 @@ export default function RecipePage() {
         tips: [],
     };
 
+    const normalizeRecipe = (rawRecipe: Partial<DetailRecipe> | undefined): DetailRecipe => {
+        const ingredients = Array.isArray(rawRecipe?.ingredients) ? rawRecipe.ingredients : [];
+        const directions = Array.isArray(rawRecipe?.directions) ? rawRecipe.directions : [];
+        const tips = Array.isArray(rawRecipe?.tips) ? rawRecipe.tips : [];
+
+        return {
+            id: Number(rawRecipe?.id ?? 0),
+            title: String(rawRecipe?.title ?? "Recipe not found"),
+            description: String(rawRecipe?.description ?? ""),
+            image_url: rawRecipe?.image_url,
+            ingredients,
+            directions: directions,
+            tips,
+        };
+    };
+
     // const [recipe, setRecipe] = useState<DetailRecipe>( recipe_sample);
 
     const [recipe, setRecipe] = useState<DetailRecipe>(defaultRecipe);
     const [stepIndex, setStepIndex] = useState(-1);
     const [listening, setListening] = useState(false);
     const [voiceTranscript, setVoiceTranscript] = useState("");
-    const {speak, stopSpeaking} = useTextToSpeech();
+    const { speak, stopSpeaking } = useTextToSpeech();
     const ttsLockRef = useRef(false);
     const waitMs = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
-    const {startListening, stopListening} = useSpeechToText();
+    const { startListening, stopListening } = useSpeechToText();
     const fetchRecipeDetails = useCallback(() => {
         getRecipeById(Number(params.id)).then(
             (data) => {
                 console.log("Fetched recipe details:", data);
-                setRecipe({
-                    id: data.recipe.id,
-                    title: data.recipe.title,
-                    description: data.recipe.description,
-                    image_url: data.recipe.image_url, // Convert image URL to ImageSourcePropType
-                    ingredients: data.recipe.ingredients,
-                    directions: data.recipe.directions,
-                    tips: data.recipe.tips,
-                });
+                setRecipe(normalizeRecipe(data?.recipe));
             }
         ).catch((error) => {
             console.error("Error fetching recipe details:", error);
@@ -71,13 +79,14 @@ export default function RecipePage() {
 
     const speakStep = async (stepIndex: number, isButtonPress: boolean) => {
         console.log("Speaking step:", stepIndex);
-        if (stepIndex >= 0 && stepIndex < recipe.directions.length) {
+        const directions = recipe.directions;
+        if (stepIndex >= 0 && stepIndex < directions.length) {
             // Ensure STT is stopped before starting TTS, and restart afterwards.
             if (ttsLockRef.current) return; // already speaking
             if (!isButtonPress) {
                 ttsLockRef.current = true;
             }
-            const text = recipe.directions[stepIndex];
+            const text = directions[stepIndex];
             try {
                 setListening(false);
                 try {
@@ -112,7 +121,7 @@ export default function RecipePage() {
         }
     })
     const speechResultHandler = (event: ExpoSpeechRecognitionResultEvent) => {
-        const transcript = event.results[0]?.transcript.toLowerCase();
+        const transcript = event.results[0]?.transcript?.toLowerCase() ?? "";
         setVoiceTranscript(transcript)
         console.log("Recognized speech:", transcript);
         if (transcript.includes("next step") || transcript.includes("next")) {
@@ -151,7 +160,8 @@ export default function RecipePage() {
     };
     const speakNextStep = async () => {
         await stopSpeaking();
-        if (stepIndex + 1 <= recipe.directions.length - 1) {
+        const directions = recipe.directions;
+        if (stepIndex + 1 <= directions.length - 1) {
             const isButtonPress = !listening;
             const nextIndex = stepIndex + 1;
             if (!isButtonPress) {
@@ -217,7 +227,7 @@ export default function RecipePage() {
         if (typeof ingredient === "string") {
             return ingredient;
         }
-        const ingredientName = String(ingredient?.ingredient_name ?? "").trim();
+        const ingredientName = String(ingredient?.name ?? "").trim();
         const quantity = String(ingredient?.quantity ?? "").trim();
         if (ingredientName && quantity) {
             return `${quantity} ${ingredientName}`;
@@ -227,27 +237,30 @@ export default function RecipePage() {
 
     const placeholder_image = "https://blocks.astratic.com/img/general-img-square.png";
     const recipe_uri = buildImageUrl(process.env.EXPO_PUBLIC_BACKEND_URL ?? "", recipe.image_url) ?? placeholder_image;
+    const ingredients = recipe.ingredients;
+    const directions = recipe.directions;
+    const tips = recipe.tips;
     return (
         <>
-            <StyledHeader title={recipe.title}/>
+            <StyledHeader title={recipe.title} />
             <SafeAreaView>
                 <ScrollView className={"px-4 pb-safe-8 safe-pb-12"}>
-                    <Image source={{uri: recipe_uri}}
-                           className={"max-w-full w-full aspect-square rounded-xl p-safe-or-1"}/>
+                    <Image source={{ uri: recipe_uri }}
+                        className={"max-w-full w-full aspect-square rounded-xl p-safe-or-1"} />
                     <Text
                         className={"global-text !font-italic !text-m text-on-surface text-center pb-4"}>{recipe.description}</Text>
                     <Text className={"global-text !font-bold !text-xl text-on-surface"}>Ingredients:</Text>
-                    {recipe.ingredients.map((ingredient, index) => (
+                    {ingredients.map((ingredient, index) => (
                         <Text key={index} className={"global-text text-on-surface pb-2"}>{formatIngredient(ingredient)}</Text>
                     ))}
                     <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Instructions:</Text>
-                    {recipe.directions.map((instruction, index) => {
+                    {directions.map((instruction, index) => {
                         const currentStepClass = stepIndex == index ? "text-red-500" : "text-on-surface";
                         return (<Text key={index}
-                                      className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
+                            className={`global-text ${currentStepClass} pb-4`}>{`${index + 1}. ${instruction}`}</Text>)
                     })}
                     <Text className={"global-text !font-bold !text-xl text-on-surface pt-4"}>Tips:</Text>
-                    {recipe.tips.map((tip, index) => (
+                    {tips.map((tip, index) => (
                         <Text className={"global-text text-on-surface pb-4"} key={index}>{`${index + 1}. ${tip}`}</Text>
                     ))}
                     <TouchableOpacity onPress={() => {
@@ -268,25 +281,25 @@ export default function RecipePage() {
                         <Text className={"global-text color-on-surface"}>Step Navigations:</Text>
                         <View className={"flex-row justify-center align-middle"}>
                             <TouchableOpacity onPress={speakNextStep}
-                                              className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
-                                              disabled={stepIndex >= recipe.directions.length - 1}>
-                                <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"}/>
+                                className={"global-button bg-secondary !rounded  !p-2.5 !m-2.5 "}
+                                disabled={stepIndex >= directions.length - 1}>
+                                <AntDesign name="plus" size={24} className={"!color-on-secondary align-middle"} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={speakPreviousStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}
-                                              disabled={stepIndex <= 0}>
-                                <AntDesign name="minus" size={24} className={"!color-on-secondary align-middle"}/>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}
+                                disabled={stepIndex <= 0}>
+                                <AntDesign name="minus" size={24} className={"!color-on-secondary align-middle"} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={repeatStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Repeat</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={resetStep}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Reset</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={stopSpeaking}
-                                              className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
+                                className={"global-button bg-secondary !rounded-[5px]  !p-2.5 !m-2.5"}>
                                 <Text className={"global-text !color-on-secondary"}>Stop</Text>
                             </TouchableOpacity>
                         </View>
