@@ -1,3 +1,4 @@
+import "../../global.css";  // Must be the first or second line
 import {Stack} from "expo-router";
 import {Inter_400Regular, Inter_400Regular_Italic, Inter_700Bold, Inter_700Bold_Italic} from "@expo-google-fonts/inter";
 import {useFonts} from "expo-font";
