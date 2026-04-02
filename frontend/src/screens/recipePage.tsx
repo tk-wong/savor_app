@@ -58,12 +58,14 @@ export default function RecipePage() {
     const [recipe, setRecipe] = useState<DetailRecipe>(defaultRecipe);
     const [stepIndex, setStepIndex] = useState(-1);
     const [listening, setListening] = useState(false);
-    const [voiceTranscript, setVoiceTranscript] = useState("");
+    const [, setVoiceTranscript] = useState("");
     const { speak, stopSpeaking } = useTextToSpeech();
     const ttsLockRef = useRef(false);
     const waitMs = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
     const { startListening, stopListening } = useSpeechToText();
+    const stepChangeLockRef = useRef(false);
+
     const fetchRecipeDetails = useCallback(() => {
         getRecipeById(Number(params.id)).then(
             (data) => {
@@ -116,14 +118,25 @@ export default function RecipePage() {
     useSpeechRecognitionEvent("end", () => {
         // only auto-restart STT if we're not in the middle of TTS
         if (listening && !ttsLockRef.current) {
-            console.log("Restarting voice interaction after speech ended");
-            setTimeout(() => startVoiceInteraction(), 100);
+            console.log("Speech ended, restarting listening");
+            setTimeout(() => {
+                try {
+                    startListening();
+                } catch (e) {
+                    console.error(e);
+                }
+            }, 100);
         }
     })
     const speechResultHandler = (event: ExpoSpeechRecognitionResultEvent) => {
         const transcript = event.results[0]?.transcript?.toLowerCase() ?? "";
         setVoiceTranscript(transcript)
         console.log("Recognized speech:", transcript);
+        if (stepChangeLockRef.current) {
+            console.log("Step change already in progress, ignoring command:", transcript);
+            return;
+        }
+
         if (transcript.includes("next step") || transcript.includes("next")) {
             speakNextStep()
         } else if (transcript.includes("previous step") || transcript.includes("previous") || transcript.includes("back")) {
@@ -134,14 +147,34 @@ export default function RecipePage() {
             resetStep();
         }
     };
+
+    const lockStepChange = () => {
+        stepChangeLockRef.current = true;
+    };
+
+    const unlockStepChange = () => {
+        stepChangeLockRef.current = false;
+    };
+
     useSpeechRecognitionEvent("result", speechResultHandler)
     const startVoiceInteraction = async () => {
         console.log(`turn on voice assistant to read the recipe ${recipe.title} (id: ${recipe.id})`);
+        if (!Array.isArray(recipe.directions) || recipe.directions.length === 0) {
+            try {
+                startListening();
+            } catch (e) {
+                console.error(e);
+            }
+            return;
+        }
         setStepIndex(0);
+        // Let React commit the highlighted step text before starting TTS.
+        await Promise.resolve();
         await speakStep(0, false);
-        startListening()
     }
     const speakPreviousStep = async () => {
+        lockStepChange();
+        try {
         await stopSpeaking();
         const isButtonPress = !listening;
         if (stepIndex - 1 >= 0) {
@@ -157,8 +190,13 @@ export default function RecipePage() {
             setStepIndex(nextIndex);
             await speakStep(nextIndex, isButtonPress);
         }
+        } finally {
+            unlockStepChange();
+        }
     };
     const speakNextStep = async () => {
+        lockStepChange();
+        try {
         await stopSpeaking();
         const directions = recipe.directions;
         if (stepIndex + 1 <= directions.length - 1) {
@@ -175,8 +213,13 @@ export default function RecipePage() {
             setStepIndex(nextIndex);
             await speakStep(nextIndex, isButtonPress);
         }
+        } finally {
+            unlockStepChange();
+        }
     };
     const resetStep = async () => {
+        lockStepChange();
+        try {
         await stopSpeaking();
         const isButtonPress = !listening;
         if (!isButtonPress) {
@@ -187,10 +230,15 @@ export default function RecipePage() {
                 console.error(e);
             }
         }
-        setStepIndex(-1);
-        // await speakStep(0, isButtonPress);
+        setStepIndex(0);
+        await speakStep(0, isButtonPress);
+        } finally {
+            unlockStepChange();
+        }
     };
     const repeatStep = async () => {
+        lockStepChange();
+        try {
         await stopSpeaking();
         const isButtonPress = !listening;
         if (!isButtonPress) {
@@ -202,6 +250,9 @@ export default function RecipePage() {
             }
         }
         await speakStep(stepIndex, isButtonPress);
+        } finally {
+            unlockStepChange();
+        }
     };
 
     const buildImageUrl = (base: string, imagePath?: string) => {

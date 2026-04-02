@@ -359,6 +359,10 @@ export default function ChatPage() {
     //     setListening(false);
     // });
     useSpeechRecognitionEvent("end", () => {
+        if (!isScreenActiveRef.current || !listening) {
+            return;
+        }
+
         setListening(false);
 
         if (isSendingMessage) {
@@ -385,6 +389,10 @@ export default function ChatPage() {
     });
 
     useSpeechRecognitionEvent("result", (event) => {
+        if (!isScreenActiveRef.current || !listening) {
+            return;
+        }
+
         if (isSendingMessage) {
             return;
         }

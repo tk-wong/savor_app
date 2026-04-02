@@ -387,7 +387,7 @@ describe("RecipePage", () => {
     expect(mockSpeak.mock.calls.length).toBe(beforeBoundary);
   });
 
-  it("restarts voice interaction on speech end only when listening and unlocked", async () => {
+  it("restarts listening on speech end without replaying step 0", async () => {
     jest.useFakeTimers();
     render(React.createElement(RecipePage));
 
@@ -401,7 +401,8 @@ describe("RecipePage", () => {
       jest.advanceTimersByTime(160);
     });
 
-    const beforeEndCalls = mockSpeak.mock.calls.length;
+    const beforeEndSpeakCalls = mockSpeak.mock.calls.length;
+    const beforeEndStartListeningCalls = mockStartListening.mock.calls.length;
     await triggerSpeechEnd();
 
     act(() => {
@@ -409,8 +410,9 @@ describe("RecipePage", () => {
     });
 
     await waitFor(() => {
-      expect(mockSpeak.mock.calls.length).toBeGreaterThan(beforeEndCalls);
+      expect(mockStartListening.mock.calls.length).toBeGreaterThan(beforeEndStartListeningCalls);
     });
+    expect(mockSpeak.mock.calls.length).toBe(beforeEndSpeakCalls);
   });
 
   it("logs speech errors when speak fails and when auto-restart listening fails", async () => {
