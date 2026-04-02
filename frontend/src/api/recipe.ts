@@ -4,7 +4,7 @@ import apiClient from "./client";
 
 export const getAllRecipes = async (): Promise<AllRecipeResponse> => {
     try {
-        const response = await apiClient.get("/recipes");
+        const response = await apiClient.get("/recipes/");
         return response.data; // Assuming the response contains the list of recipes
     } catch (error) {
         throw mapApiError(error);

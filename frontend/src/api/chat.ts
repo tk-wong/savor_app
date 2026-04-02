@@ -7,7 +7,7 @@ import {ChatHistoryResponse} from "@/src/types/response/ChatHistoryResponse";
 
 export const sendMessage = async (prompt: string, group_id: number): Promise<ChatResponse> => {
     try {
-        const response = await apiClient.post("/chat", {
+        const response = await apiClient.post("/chat/", {
             prompt: prompt,
             chat_group_id: group_id
         }, {timeout: 120000}); 
