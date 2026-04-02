@@ -774,7 +774,7 @@ describe("ChatPage", () => {
     await waitFor(() => {
       expect(mockedSendMessage).toHaveBeenCalledTimes(2);
       expect(mockStop).toHaveBeenCalled();
-      expect(speakMock).toHaveBeenCalledWith("hello bot");
+      expect(speakMock).toHaveBeenCalledWith("done");
     });
   });
 

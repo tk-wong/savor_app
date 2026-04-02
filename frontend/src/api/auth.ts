@@ -17,6 +17,7 @@ export const login = async (email: string, password: string) : Promise<LoginResp
     await SecureStore.setItemAsync("userToken", token);
     return response.data; // Assuming the token is in response.data
   } catch (error) {
+    console.error("login failed",error);
     throw mapApiError(error);
   }
 };

@@ -74,6 +74,9 @@ function RecipeCard() {
             });
             setRecipeList(formattedRecipes);
         }).catch((error: ApiRequestError) => {
+            if (error.status === 401) {
+                return;
+            }
             console.error("Error fetching recipes:", error.message);
             Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching all recipes.");
         })

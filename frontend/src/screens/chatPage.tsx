@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useHeaderHeight } from '@react-navigation/elements';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Alert, Platform, useColorScheme, View } from "react-native";
 import {
     Actions,
@@ -16,14 +16,11 @@ import {
 } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getChatHistoryByGroupId, getNewChatGroup, sendMessage } from "../api/chat";
-import { ApiRequestError } from "../api/apiRequestError";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
-import { ExpoSpeechRecognitionPermissionResponse } from "expo-speech-recognition/src/ExpoSpeechRecognitionModule.types";
 import Markdown from "react-native-markdown-display";
 import { useTextToSpeech } from "@/src/hooks/useTextToSpeech";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
-import { ChatResponse } from "@/src/types/response";
 import { DetailRecipe, Ingredient } from "@/src/types";
 import { cssInterop } from "nativewind";
 import { StyledHeader } from "@/src/components/styledHeader";
@@ -144,6 +141,22 @@ const buildImageUrl = (base: string, imagePath?: string) => {
 
 const placeholderRecipeImageUrl = "https://blocks.astratic.com/img/general-img-square.png";
 
+const logMicStatus = (action: string, using: boolean, details?: Record<string, unknown>) => {
+    console.log(`[ChatPage][Mic] ${action} | using=${using}`, details ?? {});
+};
+
+const logMessageSent = (type: "text" | "voice", message: string) => {
+    console.log(`[ChatPage][Message] sent | type=${type}`, { message });
+};
+
+const normalizeTextForSpeech = (value: string) => {
+    return value
+        .replace(/[-#*_`>\[\]]/g, " ")
+        .replace(/\((https?:\/\/[^)]+)\)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
 //
 // const useMessage = (): [IMessage[], Dispatch<SetStateAction<IMessage[]>>]  => {
 //     const [messages, setMessages] = useState<IMessage[]>([]);
@@ -153,7 +166,12 @@ const placeholderRecipeImageUrl = "https://blocks.astratic.com/img/general-img-s
 export default function ChatPage() {
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [listening, setListening] = useState(false);
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
     const [chatGroupId, setChatGroupId] = useState<number | null>(null);
+    const isScreenActiveRef = useRef(false);
+    const speechRequestTokenRef = useRef(0);
+    const pendingTranscriptRef = useRef<string | null>(null);
+    const hasSentTranscriptRef = useRef(false);
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
     const keyboardVerticalOffset = Platform.select({
@@ -176,8 +194,88 @@ export default function ChatPage() {
     //     ])
     // }, [])
 
+
+    const stopListening = useCallback(() => {
+        speechRequestTokenRef.current += 1;
+        pendingTranscriptRef.current = null;
+        hasSentTranscriptRef.current = false;
+        ExpoSpeechRecognitionModule.stop();
+        setListening(false);
+        logMicStatus("stop-request", false);
+    }, []);
+
+    const lockUserInput = useCallback(() => {
+        setIsSendingMessage(true);
+        stopListening();
+    }, [stopListening]);
+
+    const unlockUserInput = useCallback(() => {
+        setIsSendingMessage(false);
+    }, []);
+
+    const getErrorCode = (error: unknown) => {
+        if (typeof error === "object" && error !== null && "status" in error) {
+            const status = (error as { status?: unknown }).status;
+            if (typeof status === "string" || typeof status === "number") {
+                return status;
+            }
+        }
+        return "Unknown";
+    };
+
+    const getErrorMessage = (error: unknown, fallbackMessage: string) => {
+        if (typeof error === "object" && error !== null && "message" in error) {
+            const message = (error as { message?: unknown }).message;
+            if (typeof message === "string" && message.trim().length > 0) {
+                return message;
+            }
+        }
+        return fallbackMessage;
+    };
+
+    const toggleSpeechRecognition = useCallback((shouldStart: boolean) => {
+        if (isSendingMessage || !isScreenActiveRef.current) {
+            return;
+        }
+
+        logMicStatus("toggle-request", shouldStart, { isSendingMessage, screenActive: isScreenActiveRef.current });
+        if (shouldStart) {
+            pendingTranscriptRef.current = null;
+            hasSentTranscriptRef.current = false;
+        }
+        setListening(shouldStart);
+        const requestToken = ++speechRequestTokenRef.current;
+
+        ExpoSpeechRecognitionModule.requestPermissionsAsync().then((result) => {
+            if (requestToken !== speechRequestTokenRef.current || !isScreenActiveRef.current) {
+                return;
+            }
+
+            if (!result.granted) {
+                console.warn("Permissions not granted", result);
+                logMicStatus("permission-denied", false, { shouldStart, requestToken });
+                return;
+            }
+
+            if (shouldStart) {
+                ExpoSpeechRecognitionModule.start({
+                    lang: "en-US",
+                    interimResults: false,
+                    continuous: false,
+                });
+                logMicStatus("start-request", true, { requestToken });
+            } else {
+                ExpoSpeechRecognitionModule.stop();
+                logMicStatus("stop-request", false, { requestToken });
+            }
+        }).catch((error) => {
+            console.error("Error requesting permissions or starting/stopping speech recognition:", error);
+            logMicStatus("permission-error", false, { shouldStart, requestToken });
+        });
+    }, [isSendingMessage]);
     const params = useLocalSearchParams();
     useFocusEffect(useCallback(() => {
+        isScreenActiveRef.current = true;
         const initialChatGroupId = params.chatGroupId ? parseInt(params.chatGroupId as string, 10) : null;
         if (initialChatGroupId) {
             setChatGroupId(initialChatGroupId);
@@ -188,7 +286,7 @@ export default function ChatPage() {
                 const sortedHistory = history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 const formattedMessages = sortedHistory.map((msg) => {
                     console.log(msg);
-                    let responseText: string = "";
+                    let responseText: string;
                     let responseImage: string | undefined = undefined;
                     let isRecipeMessage = false;
 
@@ -202,10 +300,10 @@ export default function ChatPage() {
                     }
 
                     if (storedResponse?.prompt_type === "question") {
-                        responseText = normalizeEscapedNewlines(storedResponse.answer || "");
+                        responseText = normalizeEscapedNewlines(storedResponse?.answer || "");
                     } else if (storedResponse?.prompt_type === "recipe") {
                         isRecipeMessage = true;
-                        const recipe = storedResponse.recipe;
+                        const recipe = storedResponse?.recipe;
                         console.log("recipe:", recipe)
                         if (recipe) {
                             responseImage = buildImageUrl(backendBaseUrl, recipe.image_url ?? msg.image_url);
@@ -251,14 +349,51 @@ export default function ChatPage() {
         } else {
             console.log("No chat group ID in params, starting with new chat.");
         }
-    }, []))
+        return () => {
+            isScreenActiveRef.current = false;
+            stopListening();
+            logMicStatus("cleanup", false, { screenActive: false });
+        };
+    }, [params.chatGroupId, stopListening]))
     // useSpeechRecognitionEvent("end", () => {
     //     setListening(false);
     // });
+    useSpeechRecognitionEvent("end", () => {
+        setListening(false);
+
+        if (isSendingMessage) {
+            return;
+        }
+
+        const transcript = pendingTranscriptRef.current?.trim();
+        if (!transcript || hasSentTranscriptRef.current) {
+            return;
+        }
+
+        hasSentTranscriptRef.current = true;
+        const newMessage: IMessage = {
+            _id: Math.random(),
+            text: transcript,
+            createdAt: new Date(),
+            user: {
+                _id: 1,
+                name: 'User',
+            },
+        };
+        onSend([newMessage], "voice");
+        logMicStatus("end-auto-send", false, { hasTranscript: true });
+    });
+
     useSpeechRecognitionEvent("result", (event) => {
+        if (isSendingMessage) {
+            return;
+        }
+
         const transcript = event.results[0]?.transcript;
-        console.log(transcript);
+        pendingTranscriptRef.current = transcript?.trim() || null;
+        console.log("[ChatPage][Mic] result", { using: listening, transcript });
         if (transcript) {
+            hasSentTranscriptRef.current = true;
             const newMessage: IMessage = {
                 _id: Math.random(),
                 text: transcript,
@@ -268,13 +403,18 @@ export default function ChatPage() {
                     name: 'User',
                 },
             }
-            onSend([newMessage]);
+            onSend([newMessage], "voice");
         }
         setListening(false)
+        logMicStatus("result-idle", false, { hasTranscript: Boolean(transcript) });
     });
 
     const { speak } = useTextToSpeech();
-    const onSend = useCallback((newMessages: IMessage[] = []) => {
+    const onSend = useCallback(async (newMessages: IMessage[] = [], messageType: "text" | "voice" = "text") => {
+        if (isSendingMessage) {
+            return;
+        }
+
         const outgoingMessage = newMessages[0];
         const messageText = typeof outgoingMessage?.text === "string" ? outgoingMessage.text.trim() : "";
 
@@ -293,10 +433,15 @@ export default function ChatPage() {
 
         // Optimistically show the user's message before network round-trips.
         setMessages((previousMessages) => GiftedChat.append(previousMessages, [sanitizedMessage]));
+        logMessageSent(messageType, messageText);
 
-        const sendToBackend = (groupId: number) => {
+        const shouldSpeakAfterResponse = listening;
+        lockUserInput();
+
+        const sendToBackend = async (groupId: number) => {
             console.log("Group ID:", groupId);
-            const handleMessageResponse = (response: ChatResponse) => {
+            try {
+                const response = await sendMessage(messageText, groupId);
                 if (!response || !response.prompt_type) {
                     console.warn("Invalid response from backend:", response);
                     rollbackOptimisticMessage();
@@ -306,8 +451,10 @@ export default function ChatPage() {
                 console.log(response);
                 let response_text: string = "";
                 let recipe_url: string | undefined = undefined;
+                let speechText: string = "";
                 if (response.prompt_type === "question") {
                     response_text = normalizeEscapedNewlines(response.answer);
+                    speechText = response_text;
                 } else if (response.prompt_type === "recipe") {
                     const recipe = response.recipe;
                     if (!recipe) {
@@ -321,6 +468,7 @@ export default function ChatPage() {
                         recipe_url = placeholderRecipeImageUrl;
                     }
                     response_text = buildRecipeMarkdown(recipe);
+                    speechText = response_text;
                 } else {
                     rollbackOptimisticMessage();
                     Alert.alert("Unknown response type", `Received unknown prompt type from server`);
@@ -341,66 +489,63 @@ export default function ChatPage() {
                 setMessages(previousMessages =>
                     GiftedChat.append(previousMessages, [botMessage]),
                 )
-                if (listening) {
-                    ExpoSpeechRecognitionModule.stop();
-                    setListening(false);
-                    const cleanedText = messageText.replace(/[^\p{L}\p{N}\s]/gu, '');
-                    speak(cleanedText).then();
+                if (shouldSpeakAfterResponse) {
+                    const cleanedText = normalizeTextForSpeech(normalizeEscapedNewlines(speechText));
+                    if (cleanedText.length > 0) {
+                        speak(cleanedText).then();
+                    }
                 }
-            };
-            const handleMessageError = (error: ApiRequestError) => {
-                console.error("Error sending message:", error.message);
+            } catch (error) {
+                const errorMessage = getErrorMessage(error, "Unknown error occurred while sending message.");
+                const errorCode = getErrorCode(error);
+                if (errorCode === 401) {
+                    return;
+                }
+                console.error("Error sending message:", errorMessage);
                 rollbackOptimisticMessage();
-                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while sending message.");
-
-            };
-            sendMessage(messageText, groupId).then(handleMessageResponse).catch(handleMessageError)
+                Alert.alert(`Error Code: ${errorCode}`, errorMessage);
+            }
         };
 
-        if (chatGroupId === null) {
-            getNewChatGroup().then((response) => {
+        try {
+            if (chatGroupId === null) {
+                const response = await getNewChatGroup();
                 console.log("New chat group created with ID:", response.group_id);
                 setChatGroupId(response.group_id);
-                sendToBackend(response.group_id);
-            }).catch((error: ApiRequestError) => {
-                console.error("Error creating new chat group:", error.message);
-                rollbackOptimisticMessage();
-                Alert.alert(`Error Code: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while creating chat group.");
-            })
-        } else {
-            sendToBackend(chatGroupId);
+                await sendToBackend(response.group_id);
+            } else {
+                await sendToBackend(chatGroupId);
+            }
+        } catch (error) {
+            const errorMessage = getErrorMessage(error, "Unknown error occurred while creating chat group.");
+            const errorCode = getErrorCode(error);
+            if (errorCode === 401) {
+                return;
+            }
+            console.error("Error creating new chat group:", errorMessage);
+            rollbackOptimisticMessage();
+            Alert.alert(`Error Code: ${errorCode}`, errorMessage);
+        } finally {
+            unlockUserInput();
         }
-    }, [chatGroupId])
+    }, [chatGroupId, isSendingMessage, listening, lockUserInput, unlockUserInput, speak])
     const renderActions = React.memo((props: ActionsProps) => {
 
         const loadIcon = () => {
-            const toggleVoiceRecognition = () => {
-                setListening(!listening);
-                const handleVoiceRecognition = (result: ExpoSpeechRecognitionPermissionResponse) => {
-                    if (!result.granted) {
-                        console.warn("Permissions not granted", result);
-                        return;
-                    }
-                    if (!listening) {
-                        ExpoSpeechRecognitionModule.start({
-                            lang: "en-US",
-                            interimResults: false,
-                            continuous: false,
-                        });
-                    } else {
-                        ExpoSpeechRecognitionModule.stop();
-                    }
-                };
-                ExpoSpeechRecognitionModule.requestPermissionsAsync().then(handleVoiceRecognition).catch((error) => {
-                    console.error("Error requesting permissions or starting/stopping speech recognition:", error);
-                })
+            const onToggleVoiceRecognition = () => {
+                if (listening) {
+                    toggleSpeechRecognition(false);
+                    return;
+                }
+
+                toggleSpeechRecognition(true);
             };
             return (
                 <Feather
                     name={listening ? 'mic' : 'mic-off'}
                     size={24}
                     color={listening ? '#ff4444' : '#666'}
-                    onPress={toggleVoiceRecognition}
+                    onPress={onToggleVoiceRecognition}
                 />
             );
         };
@@ -473,7 +618,7 @@ export default function ChatPage() {
                 <GiftedChat
                     messages={messages}
                     onSend={messages => {
-                        onSend(messages);
+                        onSend(messages, "text");
                     }}
                     user={{
                         _id: 1,

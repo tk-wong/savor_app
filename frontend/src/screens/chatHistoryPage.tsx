@@ -45,6 +45,9 @@ export default function ChatHistoryPage() {
                     }
                 ).catch(
                     (error: ApiRequestError) => {
+                        if (error.status === 401) {
+                            return;
+                        }
                         console.error("Error fetching chat groups:", error.message);
                         Alert.alert(`Error: ${error.status ?? "Unknown"}`, error.message ?? "Unknown error occurred while fetching chat groups.");
                     }

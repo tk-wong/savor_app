@@ -7,11 +7,12 @@ services:
     restart: always
     # entrypoint: ["sleep", "infinity"] 
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     env_file:
       - .db-env
     ports:
       - 54321:5432
+    stop_grace_period: 2m
   pgadmin:
       image: dpage/pgadmin4
       container_name: pgadmin
@@ -24,4 +25,6 @@ services:
         - db
       volumes:
         - /home/user/project/savor_app/pgadmin:/var/lib/pgadmin
+volumes:
+  pg_data:  # Define the volume here
 
