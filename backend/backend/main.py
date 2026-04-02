@@ -22,13 +22,36 @@ CONFIG_BY_MODE = {
 
 config_path = os.getenv('APP_CONFIG_PATH')
 if not config_path:
-    config_path = str(CONFIG_BY_MODE.get(APP_MODE, CONFIG_BY_MODE['development']))
+    config_path = str(CONFIG_BY_MODE.get(
+        APP_MODE, CONFIG_BY_MODE['development']))
 
 app = create_app(config=config_path)
 
+
+def _resolve_ssl_context():
+    if os.getenv('HTTPS_ENABLED', '0') != '1':
+        return None
+
+    cert_file = os.getenv('HTTPS_CERT_FILE')
+    key_file = os.getenv('HTTPS_KEY_FILE')
+    if cert_file and key_file:
+        return cert_file, key_file
+    if cert_file or key_file:
+        raise ValueError(
+            'HTTPS_CERT_FILE and HTTPS_KEY_FILE must both be set when using certificate-based HTTPS.')
+
+    return os.getenv('HTTPS_SSL_CONTEXT', 'adhoc')
+
+
 if __name__ == '__main__':
-    app.run(
-        port=int(os.getenv('PORT', '5000')),
-        debug=os.getenv('FLASK_DEBUG', '1') == '1',
-        host=os.getenv('HOST', '0.0.0.0'),
-    )
+    run_kwargs = {
+        'port': int(os.getenv('PORT', '5000')),
+        'debug': os.getenv('FLASK_DEBUG', '1') == '1',
+        'host': os.getenv('HOST', '0.0.0.0'),
+    }
+
+    ssl_context = _resolve_ssl_context()
+    if ssl_context is not None:
+        run_kwargs['ssl_context'] = ssl_context
+
+    app.run(**run_kwargs)

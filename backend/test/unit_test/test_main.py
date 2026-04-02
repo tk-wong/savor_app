@@ -70,7 +70,8 @@ class TestMainModuleConfig:
         }
 
         app_mode = os.getenv('APP_MODE', 'development')
-        config_path = CONFIG_BY_MODE.get(app_mode, CONFIG_BY_MODE['development'])
+        config_path = CONFIG_BY_MODE.get(
+            app_mode, CONFIG_BY_MODE['development'])
 
         assert 'config.py' in str(config_path)
 
@@ -104,17 +105,20 @@ class TestMainModuleConfig:
 
         # Test development mode
         app_mode = 'development'
-        config_path = CONFIG_BY_MODE.get(app_mode, CONFIG_BY_MODE['development'])
+        config_path = CONFIG_BY_MODE.get(
+            app_mode, CONFIG_BY_MODE['development'])
         assert 'config.py' in str(config_path)
 
         # Test frontend_integration mode
         app_mode = 'frontend_integration'
-        config_path = CONFIG_BY_MODE.get(app_mode, CONFIG_BY_MODE['development'])
+        config_path = CONFIG_BY_MODE.get(
+            app_mode, CONFIG_BY_MODE['development'])
         assert 'integration_test' in str(config_path)
 
         # Test unknown mode falls back to development
         app_mode = 'unknown'
-        config_path = CONFIG_BY_MODE.get(app_mode, CONFIG_BY_MODE['development'])
+        config_path = CONFIG_BY_MODE.get(
+            app_mode, CONFIG_BY_MODE['development'])
         assert 'config.py' in str(config_path)
 
 
@@ -279,7 +283,8 @@ class TestMainConfigurationMapping:
 
         # Unknown mode should return development config
         unknown_mode = 'unknown_mode'
-        config_path = CONFIG_BY_MODE.get(unknown_mode, CONFIG_BY_MODE['development'])
+        config_path = CONFIG_BY_MODE.get(
+            unknown_mode, CONFIG_BY_MODE['development'])
 
         assert 'config.py' in str(config_path)
 
@@ -366,7 +371,8 @@ class TestMainModuleLogic:
         """Test APP_MODE determination logic"""
         # Default
         app_mode = os.getenv('APP_MODE', 'development')
-        assert app_mode in ['development', 'frontend_integration'] or app_mode == 'development'
+        assert app_mode in ['development',
+                            'frontend_integration'] or app_mode == 'development'
 
         # With env var
         os.environ['APP_MODE'] = 'frontend_integration'
@@ -408,7 +414,8 @@ class TestMainAppRunCall:
 
     def test_app_run_parameters_from_main_py(self, mocker):
         """Test exact parameters used in main.py app.run() call"""
-        mocker.patch.dict(os.environ, {'PORT': '5000', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
+        mocker.patch.dict(
+            os.environ, {'PORT': '5000', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
         # Simulate the exact parameters as used in main.py
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -421,7 +428,8 @@ class TestMainAppRunCall:
 
     def test_app_run_with_custom_port_parameter(self, mocker):
         """Test app.run() parameter resolution with custom PORT"""
-        mocker.patch.dict(os.environ, {'PORT': '8080', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
+        mocker.patch.dict(
+            os.environ, {'PORT': '8080', 'FLASK_DEBUG': '1', 'HOST': '0.0.0.0'}, clear=True)
 
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -445,7 +453,8 @@ class TestMainAppRunCall:
 
     def test_app_run_with_custom_host(self, mocker):
         """Test app.run() parameter resolution with custom HOST"""
-        mocker.patch.dict(os.environ, {'HOST': '127.0.0.1', 'FLASK_DEBUG': '1', 'PORT': '5000'}, clear=True)
+        mocker.patch.dict(os.environ, {
+                          'HOST': '127.0.0.1', 'FLASK_DEBUG': '1', 'PORT': '5000'}, clear=True)
 
         port = int(os.getenv('PORT', '5000'))
         debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -580,4 +589,28 @@ class TestMainEntrypointExecution:
         sys.modules.pop('backend.main', None)
         runpy.run_module('backend.main', run_name='__main__')
 
-        mock_app.run.assert_called_once_with(port=5050, debug=False, host='127.0.0.1')
+        mock_app.run.assert_called_once_with(
+            port=5050, debug=False, host='127.0.0.1')
+
+    def test_exec_as_main_enables_adhoc_https_when_requested(self, mocker, monkeypatch):
+        mock_app = mocker.MagicMock()
+        mocker.patch('backend.create_app', return_value=mock_app)
+
+        monkeypatch.setattr(sys, 'argv', ['main.py'])
+        monkeypatch.setenv('PORT', '5051')
+        monkeypatch.setenv('FLASK_DEBUG', '0')
+        monkeypatch.setenv('HOST', '127.0.0.1')
+        monkeypatch.setenv('HTTPS_ENABLED', '1')
+        monkeypatch.delenv('HTTPS_CERT_FILE', raising=False)
+        monkeypatch.delenv('HTTPS_KEY_FILE', raising=False)
+        monkeypatch.delenv('HTTPS_SSL_CONTEXT', raising=False)
+
+        sys.modules.pop('backend.main', None)
+        runpy.run_module('backend.main', run_name='__main__')
+
+        mock_app.run.assert_called_once_with(
+            port=5051,
+            debug=False,
+            host='127.0.0.1',
+            ssl_context='adhoc',
+        )
