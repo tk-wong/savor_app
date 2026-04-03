@@ -58,13 +58,21 @@ export default function RecipePage() {
     const [recipe, setRecipe] = useState<DetailRecipe>(defaultRecipe);
     const [stepIndex, setStepIndex] = useState(-1);
     const [listening, setListening] = useState(false);
+    const [voiceInteractionActive, setVoiceInteractionActive] = useState(false);
     const [, setVoiceTranscript] = useState("");
     const { speak, stopSpeaking } = useTextToSpeech();
     const ttsLockRef = useRef(false);
+    const voiceInteractionActiveRef = useRef(false);
+    const [ttsActive, setTtsActive] = useState(false);
     const waitMs = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
 
     const { startListening, stopListening } = useSpeechToText();
     const stepChangeLockRef = useRef(false);
+
+    const setVoiceInteractionActiveState = (active: boolean) => {
+        voiceInteractionActiveRef.current = active;
+        setVoiceInteractionActive(active);
+    };
 
     const fetchRecipeDetails = useCallback(() => {
         getRecipeById(Number(params.id)).then(
@@ -90,6 +98,7 @@ export default function RecipePage() {
             }
             const text = directions[stepIndex];
             try {
+                setTtsActive(true);
                 setListening(false);
                 try {
                     stopListening();
@@ -102,7 +111,7 @@ export default function RecipePage() {
             } finally {
                 // small delay to allow audio focus to settle before starting STT again
                 await waitMs(150);
-                if (!isButtonPress) { // if this was triggered by a button press, we don't want to auto-restart STT
+                if (!isButtonPress && voiceInteractionActiveRef.current) { // if this was triggered by a button press, we don't want to auto-restart STT
                     setListening(true);
                     try {
                         startListening();
@@ -111,13 +120,14 @@ export default function RecipePage() {
                     }
                 }
                 ttsLockRef.current = false;
+                setTtsActive(false);
 
             }
         }
     };
     useSpeechRecognitionEvent("end", () => {
         // only auto-restart STT if we're not in the middle of TTS
-        if (listening && !ttsLockRef.current) {
+        if (voiceInteractionActiveRef.current && listening && !ttsLockRef.current) {
             setTimeout(() => {
                 try {
                     startListening();
@@ -159,8 +169,10 @@ export default function RecipePage() {
 
     useSpeechRecognitionEvent("result", speechResultHandler)
     const startVoiceInteraction = async () => {
+        setVoiceInteractionActiveState(true);
         if (!Array.isArray(recipe.directions) || recipe.directions.length === 0) {
             try {
+                setListening(true);
                 startListening();
             } catch (e) {
                 console.warn("[Voice] Failed to start listening with no directions", e);
@@ -291,6 +303,12 @@ export default function RecipePage() {
     const ingredients = recipe.ingredients;
     const directions = recipe.directions;
     const tips = recipe.tips;
+    const voiceToggleClassName = ttsActive
+        ? "global-button !bg-surface-container !opacity-60"
+        : "global-button !bg-primary";
+    const voiceToggleTextClassName = ttsActive
+        ? "global-text text-on-surface-variant"
+        : "global-text text-on-primary";
     return (
         <>
             <StyledHeader title={recipe.title} />
@@ -314,19 +332,20 @@ export default function RecipePage() {
                     {tips.map((tip, index) => (
                         <Text className={"global-text text-on-surface pb-4"} key={index}>{`${index + 1}. ${tip}`}</Text>
                     ))}
-                    <TouchableOpacity onPress={() => {
-                        const previousState = listening;
-                        setListening(!previousState);
+                    <TouchableOpacity testID="voice-interaction-toggle" disabled={ttsActive} className={voiceToggleClassName} onPress={() => {
+                        const previousState = voiceInteractionActive;
+                        setVoiceInteractionActiveState(!previousState);
                         console.log(`[Voice] Voice interaction ${!previousState ? "started" : "stopped"} for recipe: ${recipe.title}`);
                         if (!previousState) {
                             startVoiceInteraction();
                         } else {
                             setListening(false);
+                            void stopSpeaking();
                             ExpoSpeechRecognitionModule.stop();
                         }
-                    }} className={"global-button !bg-primary"}>
+                    }}>
                         <Text
-                            className={"global-text text-on-primary"}>{listening ? "stop voice interaction " : "start voice interaction"}</Text>
+                            className={voiceToggleTextClassName}>{voiceInteractionActive ? "stop voice interaction" : "start voice interaction"}</Text>
                     </TouchableOpacity>
                     <View className={"bg-surface-container rounded-xl p-4 my-4"}>
                         <Text className={"global-text color-on-surface"}>Step Navigations:</Text>

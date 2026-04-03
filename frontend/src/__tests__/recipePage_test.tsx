@@ -282,6 +282,45 @@ describe("RecipePage", () => {
     expect(mockSpeechRecognitionStop).toHaveBeenCalled();
   });
 
+  it("keeps the main toggle on stop while TTS is speaking", async () => {
+    jest.useFakeTimers();
+
+    let resolveSpeak: (() => void) | null = null;
+    mockSpeak.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSpeak = resolve;
+        }),
+    );
+
+    render(React.createElement(RecipePage));
+
+    fireEvent.press(await screen.findByText("start voice interaction"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("voice-interaction-toggle")).toBeDisabled();
+      expect(screen.getByText("stop voice interaction ")).toBeTruthy();
+    });
+
+    act(() => {
+      resolveSpeak?.();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(160);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("voice-interaction-toggle")).not.toBeDisabled();
+    });
+
+    expect(screen.getByText("stop voice interaction ")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("stop voice interaction "));
+
+    expect(screen.getByText("start voice interaction")).toBeTruthy();
+  });
+
   it("handles speech result commands for next, previous/back, repeat, and reset", async () => {
     jest.useFakeTimers();
     render(React.createElement(RecipePage));
