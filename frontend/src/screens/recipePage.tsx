@@ -25,7 +25,7 @@ import { StyledHeader } from "@/src/components/styledHeader";
 
 export default function RecipePage() {
     const params = useLocalSearchParams();
-    console.log(`Received recipe id: ${params.id}`);
+    console.log(`[RecipePage] Loaded recipe screen for ID: ${params.id}`);
 
     const defaultRecipe: DetailRecipe = {
         id: 0,
@@ -69,18 +69,18 @@ export default function RecipePage() {
     const fetchRecipeDetails = useCallback(() => {
         getRecipeById(Number(params.id)).then(
             (data) => {
-                console.log("Fetched recipe details:", data);
+                console.log(`[RecipePage] Recipe loaded successfully: ${data?.recipe?.title ?? "unknown title"}`);
                 setRecipe(normalizeRecipe(data?.recipe));
             }
         ).catch((error) => {
-            console.error("Error fetching recipe details:", error);
+            console.error(`[RecipePage] Failed to fetch recipe details for ID ${params.id}:`, error);
             setRecipe(defaultRecipe);
         });
     }, []);
     useFocusEffect(fetchRecipeDetails);
 
     const speakStep = async (stepIndex: number, isButtonPress: boolean) => {
-        console.log("Speaking step:", stepIndex);
+        console.log(`[Voice] Speaking step ${stepIndex + 1}${isButtonPress ? " (manual)" : " (auto)"}`);
         const directions = recipe.directions;
         if (stepIndex >= 0 && stepIndex < directions.length) {
             // Ensure STT is stopped before starting TTS, and restart afterwards.
@@ -94,11 +94,11 @@ export default function RecipePage() {
                 try {
                     stopListening();
                 } catch (e) {
-                    console.error(e);
+                    console.warn("[Voice] Failed to stop listening before speaking step", e);
                 }
                 await speak(text);
             } catch (err) {
-                console.error('Error during speakStep:', err);
+                console.error('[Voice] Error during speakStep:', err);
             } finally {
                 // small delay to allow audio focus to settle before starting STT again
                 await waitMs(150);
@@ -107,7 +107,7 @@ export default function RecipePage() {
                     try {
                         startListening();
                     } catch (e) {
-                        console.error(e);
+                        console.warn("[Voice] Failed to restart listening after speaking step", e);
                     }
                 }
                 ttsLockRef.current = false;
@@ -118,12 +118,11 @@ export default function RecipePage() {
     useSpeechRecognitionEvent("end", () => {
         // only auto-restart STT if we're not in the middle of TTS
         if (listening && !ttsLockRef.current) {
-            console.log("Speech ended, restarting listening");
             setTimeout(() => {
                 try {
                     startListening();
                 } catch (e) {
-                    console.error(e);
+                    console.warn("[Voice] Failed to restart listening after speech end", e);
                 }
             }, 100);
         }
@@ -131,19 +130,21 @@ export default function RecipePage() {
     const speechResultHandler = (event: ExpoSpeechRecognitionResultEvent) => {
         const transcript = event.results[0]?.transcript?.toLowerCase() ?? "";
         setVoiceTranscript(transcript)
-        console.log("Recognized speech:", transcript);
         if (stepChangeLockRef.current) {
-            console.log("Step change already in progress, ignoring command:", transcript);
             return;
         }
 
         if (transcript.includes("next step") || transcript.includes("next")) {
+            console.log("[Voice] Command recognized: next step");
             speakNextStep()
         } else if (transcript.includes("previous step") || transcript.includes("previous") || transcript.includes("back")) {
+            console.log("[Voice] Command recognized: previous step");
             speakPreviousStep()
         } else if (transcript.includes("repeat")) {
+            console.log("[Voice] Command recognized: repeat step");
             repeatStep()
         } else if (transcript.includes("reset")) {
+            console.log("[Voice] Command recognized: reset step");
             resetStep();
         }
     };
@@ -158,12 +159,11 @@ export default function RecipePage() {
 
     useSpeechRecognitionEvent("result", speechResultHandler)
     const startVoiceInteraction = async () => {
-        console.log(`turn on voice assistant to read the recipe ${recipe.title} (id: ${recipe.id})`);
         if (!Array.isArray(recipe.directions) || recipe.directions.length === 0) {
             try {
                 startListening();
             } catch (e) {
-                console.error(e);
+                console.warn("[Voice] Failed to start listening with no directions", e);
             }
             return;
         }
@@ -175,21 +175,21 @@ export default function RecipePage() {
     const speakPreviousStep = async () => {
         lockStepChange();
         try {
-        await stopSpeaking();
-        const isButtonPress = !listening;
-        if (stepIndex - 1 >= 0) {
-            const nextIndex = stepIndex - 1;
-            if (!isButtonPress) {
-                setListening(false);
-                try {
-                    stopListening();
-                } catch (e) {
-                    console.error(e);
+            await stopSpeaking();
+            const isButtonPress = !listening;
+            if (stepIndex - 1 >= 0) {
+                const nextIndex = stepIndex - 1;
+                if (!isButtonPress) {
+                    setListening(false);
+                    try {
+                        stopListening();
+                    } catch (e) {
+                        console.warn("[Voice] Failed to stop listening before previous step", e);
+                    }
                 }
+                setStepIndex(nextIndex);
+                await speakStep(nextIndex, isButtonPress);
             }
-            setStepIndex(nextIndex);
-            await speakStep(nextIndex, isButtonPress);
-        }
         } finally {
             unlockStepChange();
         }
@@ -197,22 +197,22 @@ export default function RecipePage() {
     const speakNextStep = async () => {
         lockStepChange();
         try {
-        await stopSpeaking();
-        const directions = recipe.directions;
-        if (stepIndex + 1 <= directions.length - 1) {
-            const isButtonPress = !listening;
-            const nextIndex = stepIndex + 1;
-            if (!isButtonPress) {
-                setListening(false);
-                try {
-                    stopListening();
-                } catch (e) {
-                    console.error(e);
+            await stopSpeaking();
+            const directions = recipe.directions;
+            if (stepIndex + 1 <= directions.length - 1) {
+                const isButtonPress = !listening;
+                const nextIndex = stepIndex + 1;
+                if (!isButtonPress) {
+                    setListening(false);
+                    try {
+                        stopListening();
+                    } catch (e) {
+                        console.warn("[Voice] Failed to stop listening before next step", e);
+                    }
                 }
+                setStepIndex(nextIndex);
+                await speakStep(nextIndex, isButtonPress);
             }
-            setStepIndex(nextIndex);
-            await speakStep(nextIndex, isButtonPress);
-        }
         } finally {
             unlockStepChange();
         }
@@ -220,18 +220,18 @@ export default function RecipePage() {
     const resetStep = async () => {
         lockStepChange();
         try {
-        await stopSpeaking();
-        const isButtonPress = !listening;
-        if (!isButtonPress) {
-            setListening(false);
-            try {
-                stopListening();
-            } catch (e) {
-                console.error(e);
+            await stopSpeaking();
+            const isButtonPress = !listening;
+            if (!isButtonPress) {
+                setListening(false);
+                try {
+                    stopListening();
+                } catch (e) {
+                    console.warn("[Voice] Failed to stop listening before reset", e);
+                }
             }
-        }
-        setStepIndex(0);
-        await speakStep(0, isButtonPress);
+            setStepIndex(0);
+            await speakStep(0, isButtonPress);
         } finally {
             unlockStepChange();
         }
@@ -239,17 +239,17 @@ export default function RecipePage() {
     const repeatStep = async () => {
         lockStepChange();
         try {
-        await stopSpeaking();
-        const isButtonPress = !listening;
-        if (!isButtonPress) {
-            setListening(false);
-            try {
-                stopListening();
-            } catch (e) {
-                console.error(e);
+            await stopSpeaking();
+            const isButtonPress = !listening;
+            if (!isButtonPress) {
+                setListening(false);
+                try {
+                    stopListening();
+                } catch (e) {
+                    console.warn("[Voice] Failed to stop listening before repeat", e);
+                }
             }
-        }
-        await speakStep(stepIndex, isButtonPress);
+            await speakStep(stepIndex, isButtonPress);
         } finally {
             unlockStepChange();
         }
@@ -315,9 +315,9 @@ export default function RecipePage() {
                         <Text className={"global-text text-on-surface pb-4"} key={index}>{`${index + 1}. ${tip}`}</Text>
                     ))}
                     <TouchableOpacity onPress={() => {
-                        console.log(`turn on voice assistant to read the recipe ${recipe.title} (id: ${recipe.id})`);
                         const previousState = listening;
-                        setListening(!listening);
+                        setListening(!previousState);
+                        console.log(`[Voice] Voice interaction ${!previousState ? "started" : "stopped"} for recipe: ${recipe.title}`);
                         if (!previousState) {
                             startVoiceInteraction();
                         } else {

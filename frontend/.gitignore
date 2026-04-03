@@ -51,3 +51,6 @@ app-example
 
 # coverage test
 coverage
+
+# the apk files
+*.apk

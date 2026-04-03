@@ -84,6 +84,7 @@ describe("RecipePage", () => {
   const mockStartListening = jest.fn();
   const mockStopListening = jest.fn();
   const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
   const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   const originalBackendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -430,7 +431,7 @@ describe("RecipePage", () => {
       jest.advanceTimersByTime(160);
     });
 
-    expect(errorSpy).toHaveBeenCalledWith("Error during speakStep:", speakError);
+    expect(errorSpy).toHaveBeenCalledWith("[Voice] Error during speakStep:", speakError);
   });
 
   it("handles non-button voice commands while listening and catches stopListening errors", async () => {
@@ -470,7 +471,7 @@ describe("RecipePage", () => {
       jest.advanceTimersByTime(160);
     });
 
-    expect(errorSpy).toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
   });
 
   it("handles speech/listening errors and lock guard branches without crashing", async () => {
@@ -516,7 +517,7 @@ describe("RecipePage", () => {
     fireEvent.press(screen.getByTestId("ant-plus"));
 
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
     });
 
     // Exercise end handler no-restart branch when not listening.
@@ -530,6 +531,7 @@ describe("RecipePage", () => {
 
   afterAll(() => {
     logSpy.mockRestore();
+    warnSpy.mockRestore();
     // Keep console.error mocked for jest.setup.js teardown compatibility.
   });
 });

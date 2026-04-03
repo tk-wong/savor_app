@@ -18,7 +18,7 @@ export const  useSpeechToText= () =>{
                 })
             }
         ).catch((error) => {
-            console.error(error);
+            console.error("[Voice] Failed to start speech recognition:", error);
         });
     }
     const stopListening = () => {
