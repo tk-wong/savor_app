@@ -32,6 +32,8 @@ def test_retriever_creates_database_before_pgvector(monkeypatch):
     monkeypatch.setattr(module, "PGVector", FakePGVector)
     monkeypatch.setattr(module, "database_exists", lambda *_args, **_kwargs: calls.append("database_exists") or False)
     monkeypatch.setattr(module, "create_database", lambda *_args, **_kwargs: calls.append("create_database"))
+    monkeypatch.setattr(module, "should_drop_tables", lambda: False)
+    monkeypatch.setattr(module.RecipeRetriever, "_collection_exists", lambda *_args, **_kwargs: calls.append("collection_exists") or False)
     monkeypatch.setattr(module.RecipeRetriever, "create_embeddings", lambda self: calls.append("create_embeddings"))
 
     RecipeRetriever(
@@ -68,6 +70,8 @@ def test_retriever_skips_create_database_when_database_exists(monkeypatch):
     monkeypatch.setattr(module, "PGVector", FakePGVector)
     monkeypatch.setattr(module, "database_exists", lambda *_args, **_kwargs: calls.append("database_exists") or True)
     monkeypatch.setattr(module, "create_database", lambda *_args, **_kwargs: calls.append("create_database"))
+    monkeypatch.setattr(module, "should_drop_tables", lambda: False)
+    monkeypatch.setattr(module.RecipeRetriever, "_collection_exists", lambda *_args, **_kwargs: calls.append("collection_exists") or True)
     monkeypatch.setattr(module.RecipeRetriever, "create_embeddings", lambda self: calls.append("create_embeddings"))
 
     RecipeRetriever(
@@ -82,6 +86,7 @@ def test_retriever_skips_create_database_when_database_exists(monkeypatch):
     assert calls == [
         "database_exists",
         "pgvector_init",
+        "collection_exists",
         "as_retriever",
     ]
 
