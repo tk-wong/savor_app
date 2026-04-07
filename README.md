@@ -198,6 +198,8 @@ Service bind:
 
 ## 5) Image Generation Service
 
+link to fine-tuned LoRA parameters: https://huggingface.co/wongtk/savor-image-generation-model
+
 Path: ./models/image_generation_model
 
 ### Build requirements
