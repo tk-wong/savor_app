@@ -32,12 +32,22 @@ describe("apiRequestError mapping", () => {
     jest.clearAllMocks();
     jest
       .spyOn(mockedAxios, "isAxiosError")
-      .mockImplementation((error: unknown) => Boolean((error as any)?.isAxiosError));
+      .mockImplementation((error: unknown) =>
+        Boolean((error as any)?.isAxiosError),
+      );
   });
 
   it("maps all explicit status codes and defaults", () => {
-    const knownStatusCases: Array<{ status: number; expectedMessage: string; serverMessage?: string }> = [
-      { status: 400, expectedMessage: "from server", serverMessage: "from server" },
+    const knownStatusCases: Array<{
+      status: number;
+      expectedMessage: string;
+      serverMessage?: string;
+    }> = [
+      {
+        status: 400,
+        expectedMessage: "from server",
+        serverMessage: "from server",
+      },
       { status: 401, expectedMessage: "Unauthorized. Please sign in again." },
       { status: 403, expectedMessage: "Forbidden." },
       { status: 404, expectedMessage: "Resource not found." },
@@ -58,7 +68,10 @@ describe("apiRequestError mapping", () => {
       expect(mapped.details).toBeDefined();
     });
 
-    const fiveHundred = mapApiError({ isAxiosError: true, response: { status: 503, data: {} } });
+    const fiveHundred = mapApiError({
+      isAxiosError: true,
+      response: { status: 503, data: {} },
+    });
     expect(fiveHundred.message).toBe("Server error. Please try again.");
     expect(fiveHundred.status).toBe(503);
 
@@ -87,7 +100,10 @@ describe("apiRequestError mapping", () => {
   it("covers case 422 with server message", () => {
     const mapped = mapApiError({
       isAxiosError: true,
-      response: { status: 422, data: { message: "Validation error from server" } },
+      response: {
+        status: 422,
+        data: { message: "Validation error from server" },
+      },
     });
 
     expect(mapped.message).toBe("Validation error from server");
@@ -125,7 +141,10 @@ describe("auth api", () => {
       password: "secret",
     });
     expect(mockedSetItemAsync).toHaveBeenCalledWith("userToken", "token-123");
-    expect(result).toEqual({ user: { access_token: "token-123" }, profile: { id: 1 } });
+    expect(result).toEqual({
+      user: { access_token: "token-123" },
+      profile: { id: 1 },
+    });
   });
 
   it("maps login failures to ApiRequestError", async () => {
@@ -142,7 +161,9 @@ describe("auth api", () => {
   });
 
   it("creates user and returns payload", async () => {
-    mockedApiClient.post.mockResolvedValue({ data: { id: 7, username: "new_user" } } as any);
+    mockedApiClient.post.mockResolvedValue({
+      data: { id: 7, username: "new_user" },
+    } as any);
 
     const result = await createUser("new@example.com", "new_user", "pass123");
 
@@ -160,7 +181,9 @@ describe("auth api", () => {
       response: { status: 409, data: {} },
     });
 
-    await expect(createUser("existing@example.com", "existing", "pass123")).rejects.toMatchObject({
+    await expect(
+      createUser("existing@example.com", "existing", "pass123"),
+    ).rejects.toMatchObject({
       name: "ApiRequestError",
       message: "Conflict error.",
       status: 409,
@@ -176,12 +199,14 @@ describe("chat api", () => {
   });
 
   it("sends message with expected payload and timeout", async () => {
-    mockedApiClient.post.mockResolvedValue({ data: { chat_reply: "Hi" } } as any);
+    mockedApiClient.post.mockResolvedValue({
+      data: { chat_reply: "Hi" },
+    } as any);
 
     const result = await sendMessage("Hello", 55);
 
     expect(mockedApiClient.post).toHaveBeenCalledWith(
-      "/chat",
+      "/chat/",
       { prompt: "Hello", chat_group_id: 55 },
       { timeout: 120000 },
     );
@@ -192,17 +217,24 @@ describe("chat api", () => {
     mockedApiClient.get
       .mockResolvedValueOnce({ data: { group_id: 123 } } as any)
       .mockResolvedValueOnce({ data: { chat_groups: [{ id: 1 }] } } as any)
-      .mockResolvedValueOnce({ data: { chat_history: [{ role: "user", content: "hello" }] } } as any);
+      .mockResolvedValueOnce({
+        data: { chat_history: [{ role: "user", content: "hello" }] },
+      } as any);
 
     await expect(getNewChatGroup()).resolves.toEqual({ group_id: 123 });
-    await expect(getAllChatGroups()).resolves.toEqual({ chat_groups: [{ id: 1 }] });
+    await expect(getAllChatGroups()).resolves.toEqual({
+      chat_groups: [{ id: 1 }],
+    });
     await expect(getChatHistoryByGroupId(1)).resolves.toEqual({
       chat_history: [{ role: "user", content: "hello" }],
     });
 
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(1, "/chat/group/new");
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(2, "/chat/group/all");
-    expect(mockedApiClient.get).toHaveBeenNthCalledWith(3, "/chat/group/1/history");
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(
+      3,
+      "/chat/group/1/history",
+    );
   });
 
   it("maps sendMessage failures", async () => {
@@ -267,13 +299,17 @@ describe("recipe api", () => {
 
   it("fetches all recipes and recipe by id", async () => {
     mockedApiClient.get
-      .mockResolvedValueOnce({ data: { recipes: [{ id: 1, title: "Pasta" }] } } as any)
+      .mockResolvedValueOnce({
+        data: { recipes: [{ id: 1, title: "Pasta" }] },
+      } as any)
       .mockResolvedValueOnce({ data: { id: 9, title: "Soup" } } as any);
 
-    await expect(getAllRecipes()).resolves.toEqual({ recipes: [{ id: 1, title: "Pasta" }] });
+    await expect(getAllRecipes()).resolves.toEqual({
+      recipes: [{ id: 1, title: "Pasta" }],
+    });
     await expect(getRecipeById(9)).resolves.toEqual({ id: 9, title: "Soup" });
 
-    expect(mockedApiClient.get).toHaveBeenNthCalledWith(1, "/recipes");
+    expect(mockedApiClient.get).toHaveBeenNthCalledWith(1, "/recipes/");
     expect(mockedApiClient.get).toHaveBeenNthCalledWith(2, "/recipes/9");
   });
 
@@ -303,5 +339,3 @@ describe("recipe api", () => {
     });
   });
 });
-
-

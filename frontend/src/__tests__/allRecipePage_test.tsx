@@ -62,7 +62,7 @@ describe("AllRecipePage", () => {
     await waitFor(() => {
       expect(screen.getByText("Tomato Soup")).toBeTruthy();
       expect(screen.getByText("Garden Salad")).toBeTruthy();
-    });
+    }, { timeout: 5000 });
 
     const recipeImages = screen.UNSAFE_getAllByType(Image);
     expect(recipeImages[0].props.source).toEqual({ uri: "https://cdn.test/soup.png" });

@@ -202,16 +202,10 @@ EXPO_PUBLIC_BACKEND_URL=http://127.0.0.1:5000/api
 ```powershell
 cd frontend
 npm install
-npm run start
+npx expo run
 ```
 
-Common targets:
-
-```powershell
-npm run android
-npm run ios
-npm run web
-```
+This will prompt you to select a platform (android, ios, or web).
 
 ### Test and lint
 
