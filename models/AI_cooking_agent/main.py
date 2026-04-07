@@ -29,7 +29,7 @@ def main():
             'handlers': ['wsgi']
         }
     })
-    env_path = "./.env_dev"
+    env_path = "./.env_test"
     load_dotenv(env_path)
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")
