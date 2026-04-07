@@ -31,6 +31,68 @@ Optional:
 4. Build and run backend API.
 5. Build and run frontend.
 
+## Helper Scripts
+
+Path: ./
+
+Two convenience scripts are provided at the project root:
+
+- `start.sh`: starts db + pgAdmin (Docker), backend, ngrok, AI cooking agent, and image generation service.
+- `stop.sh`: stops backend/AI/image/ngrok processes and then runs `docker compose down`.
+
+Make scripts executable (one-time):
+
+```bash
+chmod u+x start.sh stop.sh
+```
+
+### Start all core services
+
+```bash
+./start.sh
+```
+
+What it starts:
+
+- PostgreSQL on `54321` and pgAdmin on `8888`
+- Backend API on `5000`
+- AI cooking agent on `5010`
+- Image generation service on `5020`
+- ngrok tunnel for backend (`ngrok http 5000`)
+
+### Service logs
+
+`start.sh` writes service logs to `./logs/`:
+
+- `logs/backend.log`
+- `logs/ngrok.log`
+- `logs/ai_agent.log`
+- `logs/image_gen.log`
+
+Watch all logs live:
+
+```bash
+tail -f logs/*.log
+```
+
+Note:
+
+- ANSI color/control escape sequences are stripped before writing to these log files.
+
+Docker logs (db and pgAdmin) are separate:
+
+```bash
+docker compose logs -f db pgadmin
+```
+
+### Stop all core services
+
+```bash
+./stop.sh
+```
+
+This script stops listeners on ports `5000`, `5010`, and `5020`, stops the ngrok process, then shuts down compose services.
+
 ## 1) Database and pgAdmin
 
 Path: ./

@@ -9,3 +9,5 @@ pgadmin_data
 pgadmin
 
 /**/*.http
+
+logs
