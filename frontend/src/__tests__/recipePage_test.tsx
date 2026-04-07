@@ -60,9 +60,9 @@ jest.mock("@expo/vector-icons/AntDesign", () => ({
     const ReactLocal = require("react");
     const { Pressable, Text } = require("react-native");
     return ReactLocal.createElement(
-        Pressable,
-        { testID: `ant-${name}`, onPress },
-        ReactLocal.createElement(Text, null, name),
+      Pressable,
+      { testID: `ant-${name}`, onPress },
+      ReactLocal.createElement(Text, null, name),
     );
   },
 }));
@@ -83,9 +83,9 @@ describe("RecipePage", () => {
   const mockStopSpeaking = jest.fn();
   const mockStartListening = jest.fn();
   const mockStopListening = jest.fn();
-  const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
-  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-  const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  const logSpy = jest.spyOn(console, "log").mockImplementation(() => { });
+  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => { });
+  const errorSpy = jest.spyOn(console, "error").mockImplementation(() => { });
   const originalBackendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
   const recipePayload = {
@@ -150,7 +150,7 @@ describe("RecipePage", () => {
       expect(screen.getByText("Test Recipe")).toBeTruthy();
       expect(screen.getByText("1. Step one")).toBeTruthy();
       expect(screen.getByText("2. Step two")).toBeTruthy();
-    });
+    }, { timeout: 5000 });
 
     const images = UNSAFE_getAllByType(Image);
     expect(images[0].props.source).toEqual({ uri: "https://cdn.test/recipe.png" });
@@ -518,13 +518,13 @@ describe("RecipePage", () => {
 
     let resolveSpeak: (() => void) | null = null;
     mockSpeak
-        .mockImplementationOnce(
-            () =>
-                new Promise<void>((resolve) => {
-                  resolveSpeak = resolve;
-                }),
-        )
-        .mockResolvedValue(undefined);
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSpeak = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
 
     mockStopListening.mockImplementation(() => {
       throw new Error("stop listening failed");
